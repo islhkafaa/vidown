@@ -46,6 +46,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import app.vidown.data.repository.DownloadQueueRepository
+import app.vidown.data.worker.DownloadWorker
+import app.vidown.domain.models.DownloadRequest
 import app.vidown.domain.models.Format
 import app.vidown.domain.models.VideoInfo
 import app.vidown.ui.viewmodel.HomeUiState
@@ -55,15 +61,17 @@ import coil.compose.AsyncImage
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel()
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val keyboardController = LocalSoftwareKeyboardController.current
     var urlInput by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
                 title = {
@@ -185,7 +193,39 @@ fun HomeScreen(
                 }
 
                 is HomeUiState.Success -> {
-                    VideoDetailsContent(videoInfo = state.videoInfo)
+                    VideoDetailsContent(
+                        videoInfo = state.videoInfo,
+                        onFormatSelected = { format ->
+                            val downloadFormatId = if (format.isVideo && format.acodec == "none") {
+                                "${format.formatId}+bestaudio"
+                            } else {
+                                format.formatId
+                            }
+
+                            val request = DownloadRequest(
+                                url = urlInput,
+                                title = state.videoInfo.title,
+                                thumbnailUrl = state.videoInfo.thumbnailUrl,
+                                formatId = downloadFormatId
+                            )
+
+                            DownloadQueueRepository.addDownload(request)
+
+                            val inputData = Data.Builder()
+                                .putString(DownloadWorker.KEY_URL, urlInput)
+                                .putString(DownloadWorker.KEY_FORMAT_ID, downloadFormatId)
+                                .putString(DownloadWorker.KEY_REQUEST_ID, request.id.toString())
+                                .putString(DownloadWorker.KEY_TITLE, state.videoInfo.title)
+                                .putLong(DownloadWorker.KEY_TOTAL_BYTES, format.displaySize)
+                                .build()
+
+                            val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
+                                .setInputData(inputData)
+                                .build()
+
+                            WorkManager.getInstance(context).enqueue(workRequest)
+                        }
+                    )
                 }
             }
         }
@@ -193,7 +233,10 @@ fun HomeScreen(
 }
 
 @Composable
-fun VideoDetailsContent(videoInfo: VideoInfo) {
+fun VideoDetailsContent(
+    videoInfo: VideoInfo,
+    onFormatSelected: (Format) -> Unit
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -254,14 +297,21 @@ fun VideoDetailsContent(videoInfo: VideoInfo) {
             .sortedByDescending { it.displaySize }
 
         items(validFormats) { format ->
-            FormatChip(format = format)
+            FormatChip(
+                format = format,
+                onClick = { onFormatSelected(format) }
+            )
         }
     }
 }
 
 @Composable
-fun FormatChip(format: Format) {
+fun FormatChip(
+    format: Format,
+    onClick: () -> Unit
+) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(

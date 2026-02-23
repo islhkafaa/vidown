@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             VidownTheme {
-                HomeScreen()
+                app.vidown.ui.navigation.MainNavigation()
             }
         }
     }

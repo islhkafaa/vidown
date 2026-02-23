@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.youtubedl.android)
     implementation(libs.youtubedl.android.ffmpeg)
+    implementation(libs.coil.compose)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

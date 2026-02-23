@@ -13,9 +13,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -25,20 +31,35 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import app.vidown.domain.models.Format
+import app.vidown.domain.models.VideoInfo
+import app.vidown.ui.viewmodel.HomeUiState
+import app.vidown.ui.viewmodel.HomeViewModel
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    viewModel: HomeViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    val keyboardController = LocalSoftwareKeyboardController.current
     var urlInput by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
@@ -79,24 +100,6 @@ fun HomeScreen() {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Rounded.Search,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-                trailingIcon = {
-                    if (urlInput.isNotEmpty()) {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.Rounded.FileDownload,
-                                contentDescription = "Fetch",
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                },
                 singleLine = true,
                 shape = MaterialTheme.shapes.extraLarge,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -107,35 +110,202 @@ fun HomeScreen() {
                 ),
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
+            Button(
+                onClick = {
+                    keyboardController?.hide()
+                    viewModel.fetchVideoInfo(urlInput)
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                enabled = urlInput.isNotEmpty() && uiState !is HomeUiState.Loading,
+                shape = MaterialTheme.shapes.extraLarge
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.FileDownload,
-                        contentDescription = null,
-                        modifier = Modifier.size(56.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                    )
+                Text(
+                    text = "Fetch Formats",
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            when (val state = uiState) {
+                is HomeUiState.Idle -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.FileDownload,
+                                contentDescription = null,
+                                modifier = Modifier.size(56.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            )
+                            Text(
+                                text = "No downloads yet",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                textAlign = TextAlign.Center,
+                            )
+                            Text(
+                                text = "Paste a link above to get started",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                }
+
+                is HomeUiState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                is HomeUiState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = state.message,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                }
+
+                is HomeUiState.Success -> {
+                    VideoDetailsContent(videoInfo = state.videoInfo)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun VideoDetailsContent(videoInfo: VideoInfo) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(bottom = 32.dp)
+    ) {
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column {
+                    if (!videoInfo.thumbnailUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = videoInfo.thumbnailUrl,
+                            contentDescription = "Video Thumbnail",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .clip(MaterialTheme.shapes.large),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = videoInfo.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        if (!videoInfo.uploader.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = videoInfo.uploader,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            Text(
+                text = "Available Formats",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
+        val validFormats = videoInfo.formats
+            .filter { !it.formatId.contains("storyboard") }
+            .sortedByDescending { it.displaySize }
+
+        items(validFormats) { format ->
+            FormatChip(format = format)
+        }
+    }
+}
+
+@Composable
+fun FormatChip(format: Format) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = CardDefaults.outlinedCardBorder()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "${format.resolution ?: "Audio"} • ${format.ext.uppercase()}",
+                    style = MaterialTheme.typography.titleSmall
+                )
+                if (!format.vcodec.isNullOrBlank() || !format.acodec.isNullOrBlank()) {
                     Text(
-                        text = "No downloads yet",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        text = "Paste a link above to get started",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                        textAlign = TextAlign.Center,
+                        text = listOfNotNull(
+                            if (format.isVideo) "Video" else null,
+                            if (!format.acodec.isNullOrBlank() && format.acodec != "none") "Audio" else null
+                        ).joinToString(" + "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+
+            val mb = format.displaySize / (1024 * 1024).toDouble()
+            if (mb > 0) {
+                Text(
+                    text = String.format("%.1f MB", mb),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                Text(
+                    text = "Unknown Size",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

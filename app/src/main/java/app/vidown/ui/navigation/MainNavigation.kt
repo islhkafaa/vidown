@@ -2,8 +2,8 @@ package app.vidown.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.List
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -22,7 +22,7 @@ import app.vidown.ui.screen.QueueScreen
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     data object Home : Screen("home", "Home", Icons.Rounded.Home)
-    data object Queue : Screen("queue", "Downloads", Icons.Rounded.List)
+    data object Queue : Screen("queue", "Downloads", Icons.AutoMirrored.Rounded.List)
 }
 
 @Composable

@@ -41,6 +41,11 @@ class DownloadWorker(
                 addOption("-f", formatId)
                 addOption("-o", outputTemplate)
                 addOption("--no-mtime")
+
+                if (formatId == "bestaudio" || formatId.contains("m4a") || formatId.contains("mp3")) {
+                     addOption("--extract-audio")
+                     addOption("--audio-format", "m4a")
+                }
             }
 
             DownloadQueueRepository.updateStatus(requestId, DownloadStatus.Downloading)

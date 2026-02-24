@@ -42,5 +42,15 @@
 -dontwarn java.beans.**
 -dontwarn org.tukaani.xz.**
 
-# Keep Apache Commons Compress classes (used by youtubedl-android to extract Python)
+# Keep Apache Commons Compress classes
 -keep class org.apache.commons.compress.** { *; }
+
+-keep class androidx.work.** { *; }
+-keep class androidx.room.** { *; }
+-keep class androidx.sqlite.** { *; }
+-keep class * extends androidx.room.RoomDatabase {
+    <init>();
+}
+-keep class **_Impl {
+    <init>();
+}

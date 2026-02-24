@@ -37,4 +37,13 @@ class YtDlpRepository {
             Result.failure(e)
         }
     }
+    suspend fun updateYtDlp(): Result<YoutubeDL.UpdateStatus> = withContext(Dispatchers.IO) {
+        try {
+            val status = YoutubeDL.getInstance().updateYoutubeDL(app.vidown.Application().applicationContext, YoutubeDL.UpdateChannel._STABLE)
+            Result.success(status ?: YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
 }

@@ -39,6 +39,11 @@ object MediaStoreManager {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
+            } else {
+                val directory = if (isVideo) Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES) else Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+                val vidownDir = File(directory, "Vidown")
+                if (!vidownDir.exists()) vidownDir.mkdirs()
+                put(MediaStore.MediaColumns.DATA, File(vidownDir, "${title}.${tempFile.extension}").absolutePath)
             }
         }
 

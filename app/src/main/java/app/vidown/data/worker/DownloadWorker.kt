@@ -1,15 +1,22 @@
 package app.vidown.data.worker
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
-import android.os.Environment
+import android.content.pm.ServiceInfo
+import android.os.Build
+import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import androidx.work.WorkManager
 import app.vidown.data.repository.DownloadQueueRepository
 import app.vidown.data.repository.MediaStoreManager
 import app.vidown.domain.models.DownloadStatus
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
@@ -19,6 +26,42 @@ class DownloadWorker(
     appContext: Context,
     workerParams: WorkerParameters
 ) : CoroutineWorker(appContext, workerParams) {
+
+    private val notificationManager =
+        appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+    init {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Downloads",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Shows progress for active downloads"
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun createForegroundInfo(progress: Int, title: String): ForegroundInfo {
+        val notificationId = id.hashCode()
+        val cancelIntent = WorkManager.getInstance(applicationContext).createCancelPendingIntent(id)
+
+        val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText("Downloading: $progress%")
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setOngoing(true)
+            .setProgress(100, progress, false)
+            .addAction(android.R.drawable.ic_delete, "Cancel", cancelIntent)
+            .build()
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(notificationId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            ForegroundInfo(notificationId, notification)
+        }
+    }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val url = inputData.getString(KEY_URL) ?: return@withContext Result.failure()
@@ -31,6 +74,8 @@ class DownloadWorker(
         val requestId = UUID.fromString(requestIdStr)
 
         try {
+            setForeground(createForegroundInfo(0, title))
+
             val downloadDir = File(applicationContext.cacheDir, "vidown_temp")
             if (!downloadDir.exists()) downloadDir.mkdirs()
 
@@ -49,6 +94,8 @@ class DownloadWorker(
             }
 
             DownloadQueueRepository.updateStatus(requestId, DownloadStatus.Downloading)
+
+            var lastNotificationTime = 0L
 
             YoutubeDL.getInstance().execute(request, requestIdStr) { progress, etaInSeconds, line ->
                 val match = sizeRegex.find(line)
@@ -70,6 +117,15 @@ class DownloadWorker(
                     downloadedBytes = (totalBytes * (progress / 100f)).toLong(),
                     totalBytes = totalBytes
                 )
+
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - lastNotificationTime > 1000) {
+                    notificationManager.notify(
+                        id.hashCode(),
+                        createForegroundInfo(progress.toInt(), title).notification
+                    )
+                    lastNotificationTime = currentTime
+                }
             }
 
             val downloadedFile = downloadDir.listFiles()?.find { it.name.startsWith(safeTitle) }
@@ -113,5 +169,6 @@ class DownloadWorker(
         const val KEY_TITLE = "key_title"
         const val KEY_THUMBNAIL = "key_thumbnail"
         const val KEY_TOTAL_BYTES = "key_total_bytes"
+        const val CHANNEL_ID = "vidown_downloads"
     }
 }

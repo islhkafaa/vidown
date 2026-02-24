@@ -1,5 +1,10 @@
 package app.vidown.ui.screen
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -66,7 +71,7 @@ fun QueueScreen(modifier: Modifier = Modifier, viewModel: QueueViewModel = viewM
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
         }
@@ -105,7 +110,14 @@ fun QueueScreen(modifier: Modifier = Modifier, viewModel: QueueViewModel = viewM
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(queue, key = { it.id }) { request ->
-                    DownloadItemCard(request = request)
+                    DownloadItemCard(
+                        request = request,
+                        modifier = Modifier.animateItem(
+                            fadeInSpec = null,
+                            fadeOutSpec = null,
+                            placementSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioMediumBouncy)
+                        )
+                    )
                 }
             }
         }
@@ -113,9 +125,9 @@ fun QueueScreen(modifier: Modifier = Modifier, viewModel: QueueViewModel = viewM
 }
 
 @Composable
-fun DownloadItemCard(request: DownloadRequest) {
+fun DownloadItemCard(request: DownloadRequest, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -186,8 +198,14 @@ fun DownloadItemCard(request: DownloadRequest) {
                 }
 
                 if (request.status == DownloadStatus.Downloading) {
+                    val animatedProgress by animateFloatAsState(
+                        targetValue = request.progress / 100f,
+                        animationSpec = tween(durationMillis = 500),
+                        label = "progress_bar"
+                    )
+
                     LinearProgressIndicator(
-                        progress = { request.progress / 100f },
+                        progress = { animatedProgress },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(4.dp)

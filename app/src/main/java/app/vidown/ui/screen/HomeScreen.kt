@@ -1,5 +1,13 @@
 package app.vidown.ui.screen
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,17 +19,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -39,7 +50,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
@@ -83,7 +96,7 @@ fun HomeScreen(
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
         },
@@ -108,8 +121,19 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
+                trailingIcon = {
+                    if (urlInput.isNotEmpty()) {
+                        IconButton(onClick = { urlInput = "" }) {
+                            Icon(
+                                imageVector = Icons.Rounded.Clear,
+                                contentDescription = "Clear input",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                },
                 singleLine = true,
-                shape = MaterialTheme.shapes.extraLarge,
+                shape = RoundedCornerShape(18.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -120,14 +144,36 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            var isPressed by rememberSaveable { mutableStateOf(false) }
+            val scale by animateFloatAsState(
+                targetValue = if (isPressed) 0.95f else 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                ),
+                label = "button_scale"
+            )
+
             Button(
                 onClick = {
                     keyboardController?.hide()
                     viewModel.fetchVideoInfo(urlInput)
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .scale(scale)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                isPressed = true
+                                tryAwaitRelease()
+                                isPressed = false
+                            },
+                        )
+                    },
                 enabled = urlInput.isNotEmpty() && uiState !is HomeUiState.Loading,
-                shape = MaterialTheme.shapes.extraLarge
+                shape = RoundedCornerShape(18.dp)
             ) {
                 Text(
                     text = "Fetch Formats",
@@ -137,95 +183,103 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            when (val state = uiState) {
-                is HomeUiState.Idle -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+            AnimatedContent(
+                targetState = uiState,
+                transitionSpec = {
+                    fadeIn() togetherWith fadeOut()
+                },
+                label = "home_state"
+            ) { state ->
+                when (state) {
+                    is HomeUiState.Idle -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.FileDownload,
-                                contentDescription = null,
-                                modifier = Modifier.size(56.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.FileDownload,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(56.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                )
+                                Text(
+                                    text = "No downloads yet",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                    textAlign = TextAlign.Center,
+                                )
+                                Text(
+                                    text = "Paste a link above to get started",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
+                    }
+
+                    is HomeUiState.Loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    is HomeUiState.Error -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
                             Text(
-                                text = "No downloads yet",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                text = state.message,
+                                color = MaterialTheme.colorScheme.error,
                                 textAlign = TextAlign.Center,
-                            )
-                            Text(
-                                text = "Paste a link above to get started",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(16.dp)
                             )
                         }
                     }
-                }
 
-                is HomeUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
+                    is HomeUiState.Success -> {
+                        VideoDetailsContent(
+                            videoInfo = state.videoInfo,
+                            onFormatSelected = { format ->
+                                val downloadFormatId = if (format.isVideo && format.acodec == "none") {
+                                    "${format.formatId}+bestaudio"
+                                } else {
+                                    format.formatId
+                                }
 
-                is HomeUiState.Error -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = state.message,
-                            color = MaterialTheme.colorScheme.error,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(16.dp)
+                                val request = DownloadRequest(
+                                    url = urlInput,
+                                    title = state.videoInfo.title,
+                                    thumbnailUrl = state.videoInfo.thumbnailUrl,
+                                    formatId = downloadFormatId
+                                )
+
+                                DownloadQueueRepository.addDownload(request)
+
+                                val inputData = Data.Builder()
+                                    .putString(DownloadWorker.KEY_URL, urlInput)
+                                    .putString(DownloadWorker.KEY_FORMAT_ID, downloadFormatId)
+                                    .putString(DownloadWorker.KEY_REQUEST_ID, request.id.toString())
+                                    .putString(DownloadWorker.KEY_TITLE, state.videoInfo.title)
+                                    .putLong(DownloadWorker.KEY_TOTAL_BYTES, format.displaySize)
+                                    .build()
+
+                                val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
+                                    .setInputData(inputData)
+                                    .build()
+
+                                WorkManager.getInstance(context).enqueue(workRequest)
+                            }
                         )
                     }
-                }
-
-                is HomeUiState.Success -> {
-                    VideoDetailsContent(
-                        videoInfo = state.videoInfo,
-                        onFormatSelected = { format ->
-                            val downloadFormatId = if (format.isVideo && format.acodec == "none") {
-                                "${format.formatId}+bestaudio"
-                            } else {
-                                format.formatId
-                            }
-
-                            val request = DownloadRequest(
-                                url = urlInput,
-                                title = state.videoInfo.title,
-                                thumbnailUrl = state.videoInfo.thumbnailUrl,
-                                formatId = downloadFormatId
-                            )
-
-                            DownloadQueueRepository.addDownload(request)
-
-                            val inputData = Data.Builder()
-                                .putString(DownloadWorker.KEY_URL, urlInput)
-                                .putString(DownloadWorker.KEY_FORMAT_ID, downloadFormatId)
-                                .putString(DownloadWorker.KEY_REQUEST_ID, request.id.toString())
-                                .putString(DownloadWorker.KEY_TITLE, state.videoInfo.title)
-                                .putLong(DownloadWorker.KEY_TOTAL_BYTES, format.displaySize)
-                                .build()
-
-                            val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
-                                .setInputData(inputData)
-                                .build()
-
-                            WorkManager.getInstance(context).enqueue(workRequest)
-                        }
-                    )
                 }
             }
         }

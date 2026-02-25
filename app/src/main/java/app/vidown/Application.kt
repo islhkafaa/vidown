@@ -13,8 +13,23 @@ import com.yausername.youtubedl_android.YoutubeDL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.Executors
 
-class Application : Application() {
+class Application : Application(), androidx.work.Configuration.Provider {
+
+    override val workManagerConfiguration: androidx.work.Configuration
+        get() {
+            val settingsRepo = app.vidown.data.repository.SettingsRepository(this)
+            val limit = runBlocking { settingsRepo.concurrentDownloadsFlow.firstOrNull() ?: 3 }
+
+            return androidx.work.Configuration.Builder()
+                .setExecutor(Executors.newFixedThreadPool(limit))
+                .setMinimumLoggingLevel(Log.INFO)
+                .build()
+        }
+
     override fun onCreate() {
         super.onCreate()
 

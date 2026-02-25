@@ -54,6 +54,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -95,6 +96,10 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val keyboardController = LocalSoftwareKeyboardController.current
     var urlInput by rememberSaveable { mutableStateOf("") }
+
+    val settingsRepository = remember { app.vidown.data.repository.SettingsRepository(context) }
+    val concurrentLimit by settingsRepository.concurrentDownloadsFlow.collectAsState(initial = 3)
+    val defaultRes by settingsRepository.defaultResolutionFlow.collectAsState(initial = "Best Video")
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 

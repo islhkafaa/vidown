@@ -25,6 +25,8 @@ import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.HighQuality
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.filled.Refresh
@@ -78,6 +80,8 @@ fun SettingsScreen(
     val extractorUpdateResult by viewModel.extractorUpdateResult.collectAsState()
     val isUpdatingExtractors by viewModel.isUpdatingExtractors.collectAsState()
     val downloadUriState by viewModel.downloadUriState.collectAsState()
+    val concurrentDownloadsState by viewModel.concurrentDownloadsState.collectAsState()
+    val defaultResolutionState by viewModel.defaultResolutionState.collectAsState()
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
@@ -273,6 +277,79 @@ fun SettingsScreen(
                                     )
                                 }
                             }
+                        }
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val newLimit = if (concurrentDownloadsState >= 5) 1 else concurrentDownloadsState + 1
+                                    viewModel.setConcurrentDownloads(newLimit)
+                                }
+                                .padding(horizontal = 20.dp, vertical = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Concurrent Downloads",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                )
+                                Text(
+                                    text = "$concurrentDownloadsState simultaneous files",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Rounded.Layers,
+                                contentDescription = "Concurrent Limit",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val nextRes = when (defaultResolutionState) {
+                                        "Best Video" -> "1080p"
+                                        "1080p" -> "720p"
+                                        "720p" -> "Audio Only"
+                                        else -> "Best Video"
+                                    }
+                                    viewModel.setDefaultResolution(nextRes)
+                                }
+                                .padding(horizontal = 20.dp, vertical = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Default Resolution",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                )
+                                Text(
+                                    text = defaultResolutionState,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Rounded.HighQuality,
+                                contentDescription = "Resolution Setting",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }

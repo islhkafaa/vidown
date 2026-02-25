@@ -20,6 +20,8 @@ class SettingsRepository(private val context: Context) {
     companion object {
         val THEME_KEY = stringPreferencesKey("app_theme")
         val DOWNLOAD_URI_KEY = stringPreferencesKey("download_uri")
+        val CONCURRENT_DOWNLOADS_KEY = androidx.datastore.preferences.core.intPreferencesKey("concurrent_downloads")
+        val DEFAULT_RESOLUTION_KEY = stringPreferencesKey("default_resolution")
     }
 
     val themeFlow: Flow<AppTheme> = context.dataStore.data
@@ -37,6 +39,16 @@ class SettingsRepository(private val context: Context) {
             preferences[DOWNLOAD_URI_KEY]
         }
 
+    val concurrentDownloadsFlow: Flow<Int> = context.dataStore.data
+        .map { preferences ->
+            preferences[CONCURRENT_DOWNLOADS_KEY] ?: 3
+        }
+
+    val defaultResolutionFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[DEFAULT_RESOLUTION_KEY] ?: "Best Video"
+        }
+
     suspend fun setTheme(theme: AppTheme) {
         context.dataStore.edit { preferences ->
             preferences[THEME_KEY] = theme.name
@@ -50,6 +62,18 @@ class SettingsRepository(private val context: Context) {
             } else {
                 preferences[DOWNLOAD_URI_KEY] = uriString
             }
+        }
+    }
+
+    suspend fun setConcurrentDownloads(limit: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[CONCURRENT_DOWNLOADS_KEY] = limit
+        }
+    }
+
+    suspend fun setDefaultResolution(resolution: String) {
+        context.dataStore.edit { preferences ->
+            preferences[DEFAULT_RESOLUTION_KEY] = resolution
         }
     }
 }

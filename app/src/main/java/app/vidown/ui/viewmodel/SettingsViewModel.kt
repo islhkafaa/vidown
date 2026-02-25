@@ -28,6 +28,20 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = null
         )
 
+    val concurrentDownloadsState: StateFlow<Int> = settingsRepository.concurrentDownloadsFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 3
+        )
+
+    val defaultResolutionState: StateFlow<String> = settingsRepository.defaultResolutionFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "Best Video"
+        )
+
     private val updateManager = app.vidown.domain.manager.UpdateManager(application)
 
     private val _updateState = kotlinx.coroutines.flow.MutableStateFlow<app.vidown.domain.manager.UpdateResult?>(null)
@@ -53,6 +67,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setDownloadUri(uri: String?) {
         viewModelScope.launch {
             settingsRepository.setDownloadUri(uri)
+        }
+    }
+
+    fun setConcurrentDownloads(limit: Int) {
+        viewModelScope.launch {
+            settingsRepository.setConcurrentDownloads(limit)
+        }
+    }
+
+    fun setDefaultResolution(resolution: String) {
+        viewModelScope.launch {
+            settingsRepository.setDefaultResolution(resolution)
         }
     }
 

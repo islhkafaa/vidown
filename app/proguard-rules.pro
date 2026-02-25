@@ -19,6 +19,8 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
+-keep class app.vidown.Application { *; }
+
 # youtubedl-android and ffmpeg-android rules
 -keep class com.yausername.youtubedl_android.** { *; }
 -keep interface com.yausername.youtubedl_android.** { *; }

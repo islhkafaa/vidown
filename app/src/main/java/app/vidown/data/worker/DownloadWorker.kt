@@ -10,6 +10,8 @@ import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import androidx.work.WorkManager
+import app.vidown.data.local.AppDatabase
+import app.vidown.data.local.HistoryEntity
 import app.vidown.data.repository.DownloadQueueRepository
 import app.vidown.data.repository.MediaStoreManager
 import app.vidown.domain.models.DownloadStatus
@@ -69,9 +71,11 @@ class DownloadWorker(
         val requestIdStr = inputData.getString(KEY_REQUEST_ID) ?: return@withContext Result.failure()
         val title = inputData.getString(KEY_TITLE) ?: "unknown_video"
         var totalBytes = inputData.getLong(KEY_TOTAL_BYTES, 0L)
+        val thumbnailUrl = inputData.getString(KEY_THUMBNAIL)
         val sizeRegex = Regex("""of\s+~?\s*([0-9.]+)([a-zA-Z]+)""")
 
         val requestId = UUID.fromString(requestIdStr)
+        val db = AppDatabase.getDatabase(applicationContext)
 
         try {
             setForeground(createForegroundInfo(0, title))
@@ -150,6 +154,18 @@ class DownloadWorker(
 
             if (success) {
                 DownloadQueueRepository.updateStatus(requestId, DownloadStatus.Success)
+                db.historyDao().insertHistory(
+                    HistoryEntity(
+                        id = requestIdStr,
+                        url = url,
+                        title = safeTitle,
+                        formatId = formatId,
+                        thumbnailUrl = thumbnailUrl,
+                        timestampMs = System.currentTimeMillis(),
+                        totalBytes = totalBytes,
+                        status = DownloadStatus.Success
+                    )
+                )
                 Result.success()
             } else {
                 throw Exception("Failed to save to MediaStore")
@@ -158,6 +174,18 @@ class DownloadWorker(
         } catch (e: Exception) {
             e.printStackTrace()
             DownloadQueueRepository.updateStatus(requestId, DownloadStatus.Failed)
+            db.historyDao().insertHistory(
+                HistoryEntity(
+                    id = requestIdStr,
+                    url = url,
+                    title = title,
+                    formatId = formatId,
+                    thumbnailUrl = thumbnailUrl,
+                    timestampMs = System.currentTimeMillis(),
+                    totalBytes = totalBytes,
+                    status = DownloadStatus.Failed
+                )
+            )
             Result.failure()
         }
     }

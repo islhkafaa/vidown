@@ -3,6 +3,7 @@ package app.vidown.ui.navigation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
@@ -19,19 +20,21 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.vidown.ui.screen.HomeScreen
+import app.vidown.ui.screen.HistoryScreen
 import app.vidown.ui.screen.QueueScreen
 import app.vidown.ui.screen.SettingsScreen
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     data object Home : Screen("home", "Home", Icons.Rounded.Home)
     data object Queue : Screen("queue", "Downloads", Icons.AutoMirrored.Rounded.List)
+    data object History : Screen("history", "History", Icons.Rounded.History)
     data object Settings : Screen("settings", "Settings", Icons.Rounded.Settings)
 }
 
 @Composable
 fun MainNavigation() {
     val navController = rememberNavController()
-    val items = listOf(Screen.Home, Screen.Queue, Screen.Settings)
+    val items = listOf(Screen.Home, Screen.Queue, Screen.History, Screen.Settings)
 
     Scaffold(
         bottomBar = {
@@ -65,6 +68,7 @@ fun MainNavigation() {
         ) {
             composable(Screen.Home.route) { HomeScreen() }
             composable(Screen.Queue.route) { QueueScreen() }
+            composable(Screen.History.route) { HistoryScreen() }
             composable(Screen.Settings.route) { SettingsScreen() }
         }
     }

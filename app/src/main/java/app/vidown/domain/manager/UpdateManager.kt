@@ -100,12 +100,9 @@ class UpdateManager(private val context: Context) {
                         val statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
                         val status = cursor.getInt(statusIndex)
                         if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                            val uriIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
-                            val localUriString = cursor.getString(uriIndex)
-                            if (localUriString != null) {
-                                val fileUri = Uri.parse(localUriString)
-                                val file = File(fileUri.path ?: "")
-                                installApk(file)
+                            val uri = downloadManager.getUriForDownloadedFile(downloadId)
+                            if (uri != null) {
+                                installApk(uri)
                                 continuation.resume(true)
                             } else {
                                 continuation.resume(false)
@@ -134,14 +131,8 @@ class UpdateManager(private val context: Context) {
         }
     }
 
-    private fun installApk(file: File) {
+    private fun installApk(uri: Uri) {
         try {
-            val uri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                file
-            )
-
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(uri, "application/vnd.android.package-archive")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION

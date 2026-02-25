@@ -45,14 +45,17 @@ android {
         abi {
             isEnable = true
             reset()
-            include("x86", "x86_64", "armeabi-v7a", "arm64-v8a")
+            include("armeabi-v7a", "arm64-v8a")
             isUniversalApk = false
         }
     }
 
     packaging {
         jniLibs {
-            useLegacyPackaging = true
+            useLegacyPackaging = false
+        }
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
 }
@@ -74,7 +77,9 @@ dependencies {
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+
     implementation(libs.compose.material.icons.extended)
+
     implementation(libs.compose.ui.google.fonts)
 
     implementation(libs.androidx.room.runtime)

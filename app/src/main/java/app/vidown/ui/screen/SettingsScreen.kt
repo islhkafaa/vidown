@@ -67,6 +67,8 @@ fun SettingsScreen(
     val currentTheme by viewModel.themeState.collectAsState()
     val isCheckingUpdate by viewModel.isCheckingUpdate.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
+    val extractorUpdateResult by viewModel.extractorUpdateResult.collectAsState()
+    val isUpdatingExtractors by viewModel.isUpdatingExtractors.collectAsState()
 
     var showUpdateDialog by remember { mutableStateOf(false) }
 
@@ -158,7 +160,7 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(innerPadding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
                 SettingsSectionHeader(title = "Appearance", icon = Icons.Rounded.Palette)
@@ -273,6 +275,55 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                         )
                         if (isCheckingUpdate) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = !isUpdatingExtractors) {
+                                viewModel.updateExtractors()
+                            }
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Update Download Extractors",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            if (extractorUpdateResult != null) {
+                                val msg = if (extractorUpdateResult?.isSuccess == true) {
+                                    val status = extractorUpdateResult?.getOrNull()
+                                    if (status == com.yausername.youtubedl_android.YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE) "Up to date" else "Updated successfully"
+                                } else {
+                                    "Update failed"
+                                }
+                                val color = if (extractorUpdateResult?.isSuccess == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                Text(
+                                    text = msg,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = color
+                                )
+                            }
+                        }
+                        if (isUpdatingExtractors) {
                             androidx.compose.material3.CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp

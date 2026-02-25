@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.vidown.data.repository.AppTheme
 import app.vidown.data.repository.SettingsRepository
+import app.vidown.data.repository.YtDlpRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -27,6 +28,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val _isCheckingUpdate = kotlinx.coroutines.flow.MutableStateFlow(false)
     val isCheckingUpdate: StateFlow<Boolean> = _isCheckingUpdate
+
+    private val ytDlpRepository = YtDlpRepository(application)
+
+    private val _isUpdatingExtractors = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val isUpdatingExtractors: StateFlow<Boolean> = _isUpdatingExtractors
+
+    private val _extractorUpdateResult = kotlinx.coroutines.flow.MutableStateFlow<Result<com.yausername.youtubedl_android.YoutubeDL.UpdateStatus>?>(null)
+    val extractorUpdateResult: StateFlow<Result<com.yausername.youtubedl_android.YoutubeDL.UpdateStatus>?> = _extractorUpdateResult
 
     fun setTheme(theme: AppTheme) {
         viewModelScope.launch {
@@ -51,5 +60,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun resetUpdateState() {
         _updateState.value = null
+    }
+
+    fun updateExtractors() {
+        viewModelScope.launch {
+            _isUpdatingExtractors.value = true
+            val result = ytDlpRepository.updateYtDlp()
+            _extractorUpdateResult.value = result
+            _isUpdatingExtractors.value = false
+        }
+    }
+
+    fun resetExtractorUpdateResult() {
+        _extractorUpdateResult.value = null
     }
 }

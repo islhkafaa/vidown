@@ -1,6 +1,7 @@
 package app.vidown.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.vidown.data.repository.YtDlpRepository
 import app.vidown.domain.models.VideoInfo
@@ -16,8 +17,8 @@ sealed class HomeUiState {
     data class Error(val message: String) : HomeUiState()
 }
 
-class HomeViewModel : ViewModel() {
-    private val repository = YtDlpRepository()
+class HomeViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = YtDlpRepository(application.applicationContext)
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Idle)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()

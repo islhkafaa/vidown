@@ -25,4 +25,13 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
             db.historyDao().clearHistory()
         }
     }
+
+    fun deleteRecord(record: HistoryEntity, context: android.content.Context) {
+        viewModelScope.launch {
+            if (record.fileUri != null) {
+                app.vidown.data.repository.MediaStoreManager.deleteFile(context, record.fileUri)
+            }
+            db.historyDao().deleteById(record.id)
+        }
+    }
 }

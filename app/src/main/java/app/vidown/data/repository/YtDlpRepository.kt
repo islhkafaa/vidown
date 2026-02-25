@@ -1,23 +1,55 @@
 package app.vidown.data.repository
 
+import android.content.Context
+import android.util.Log
 import app.vidown.domain.models.VideoInfo
+import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
-class YtDlpRepository {
+class YtDlpRepository(private val context: Context) {
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
         isLenient = true
     }
 
+    companion object {
+        private val initMutex = Mutex()
+        private var isInitialized = false
+    }
+
+    private suspend fun ensureInitialized() {
+        if (!isInitialized) {
+            initMutex.withLock {
+                if (!isInitialized) {
+                    try {
+                        withContext(Dispatchers.IO) {
+                            YoutubeDL.getInstance().init(context)
+                            FFmpeg.getInstance().init(context)
+                            isInitialized = true
+                        }
+                    } catch (e: Exception) {
+                        Log.e("YtDlpRepository", "Initialization failed", e)
+                        throw e
+                    }
+                }
+            }
+        }
+    }
+
     suspend fun fetchVideoInfo(url: String): Result<VideoInfo> = withContext(Dispatchers.IO) {
         try {
+            ensureInitialized()
+
             val request = YoutubeDLRequest(url).apply {
-                addOption("-J")
+                addOption("--dump-json")
+                addOption("--no-playlist")
             }
 
             val response = YoutubeDL.getInstance().execute(request)
@@ -33,16 +65,18 @@ class YtDlpRepository {
             Result.success(videoInfo)
 
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("YtDlpRepository", "Error fetching video info", e)
             Result.failure(e)
         }
     }
+
     suspend fun updateYtDlp(): Result<YoutubeDL.UpdateStatus> = withContext(Dispatchers.IO) {
         try {
-            val status = YoutubeDL.getInstance().updateYoutubeDL(app.vidown.Application().applicationContext, YoutubeDL.UpdateChannel._STABLE)
+            ensureInitialized()
+            val status = YoutubeDL.getInstance().updateYoutubeDL(context, YoutubeDL.UpdateChannel._STABLE)
             Result.success(status ?: YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("YtDlpRepository", "Error updating yt-dlp", e)
             Result.failure(e)
         }
     }

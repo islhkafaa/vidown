@@ -41,6 +41,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import app.vidown.data.local.HistoryEntity
 import app.vidown.domain.models.DownloadStatus
 import app.vidown.ui.viewmodel.HistoryViewModel
@@ -117,7 +122,10 @@ fun HistoryScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(historyList, key = { it.id }) { record ->
-                    HistoryItemCard(record = record)
+                    HistoryItemCard(
+                        record = record,
+                        onDeleteClick = { viewModel.deleteRecord(record, it) }
+                    )
                 }
             }
         }
@@ -125,9 +133,39 @@ fun HistoryScreen(
 }
 
 @Composable
-fun HistoryItemCard(record: HistoryEntity, modifier: Modifier = Modifier) {
+fun HistoryItemCard(
+    record: HistoryEntity,
+    onDeleteClick: (android.content.Context) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable {
+                if (record.status == DownloadStatus.Success && record.fileUri != null) {
+                    try {
+                        val uri = Uri.parse(record.fileUri)
+                        val mimeType = context.contentResolver.getType(uri) ?: "*/*"
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, mimeType)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        val chooser = Intent.createChooser(intent, "Open with").apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(chooser)
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Could not play file", Toast.LENGTH_SHORT).show()
+                    }
+                } else if (record.status == DownloadStatus.Failed) {
+                    Toast.makeText(context, "Download failed", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "File unavailable", Toast.LENGTH_SHORT).show()
+                }
+            },
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -205,6 +243,17 @@ fun HistoryItemCard(record: HistoryEntity, modifier: Modifier = Modifier) {
                         color = statusColor
                     )
                 }
+            }
+
+            IconButton(
+                onClick = { onDeleteClick(context) },
+                modifier = Modifier.align(Alignment.CenterVertically)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Delete,
+                    contentDescription = "Delete Record",
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                )
             }
         }
     }

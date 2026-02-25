@@ -78,6 +78,9 @@ class DownloadWorker(
         val db = AppDatabase.getDatabase(applicationContext)
 
         try {
+            com.yausername.youtubedl_android.YoutubeDL.getInstance().init(applicationContext)
+            com.yausername.ffmpeg.FFmpeg.getInstance().init(applicationContext)
+
             setForeground(createForegroundInfo(0, title))
 
             val downloadDir = File(applicationContext.cacheDir, "vidown_temp")
@@ -140,7 +143,7 @@ class DownloadWorker(
 
             val isVideo = extension in listOf("mp4", "webm", "mkv", "avi")
 
-            val success = MediaStoreManager.saveFile(
+            val savedUriString = MediaStoreManager.saveFile(
                 context = applicationContext,
                 tempFile = downloadedFile,
                 title = safeTitle,
@@ -152,7 +155,7 @@ class DownloadWorker(
                 downloadedFile.delete()
             }
 
-            if (success) {
+            if (savedUriString != null) {
                 DownloadQueueRepository.updateStatus(requestId, DownloadStatus.Success)
                 db.historyDao().insertHistory(
                     HistoryEntity(
@@ -163,7 +166,8 @@ class DownloadWorker(
                         thumbnailUrl = thumbnailUrl,
                         timestampMs = System.currentTimeMillis(),
                         totalBytes = totalBytes,
-                        status = DownloadStatus.Success
+                        status = DownloadStatus.Success,
+                        fileUri = savedUriString
                     )
                 )
                 Result.success()
@@ -183,7 +187,8 @@ class DownloadWorker(
                     thumbnailUrl = thumbnailUrl,
                     timestampMs = System.currentTimeMillis(),
                     totalBytes = totalBytes,
-                    status = DownloadStatus.Failed
+                    status = DownloadStatus.Failed,
+                    fileUri = null
                 )
             )
             Result.failure()

@@ -15,5 +15,6 @@ data class HistoryEntity(
     val timestampMs: Long,
     val durationInSeconds: Int? = null,
     val totalBytes: Long,
-    val status: DownloadStatus
+    val status: DownloadStatus,
+    val fileUri: String? = null
 )

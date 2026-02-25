@@ -9,7 +9,7 @@ import android.provider.MediaStore
 import java.io.File
 
 object MediaStoreManager {
-    fun saveFile(context: Context, tempFile: File, title: String, mimeType: String, isVideo: Boolean): Boolean {
+    fun saveFile(context: Context, tempFile: File, title: String, mimeType: String, isVideo: Boolean): String? {
         val resolver = context.contentResolver
 
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -49,7 +49,7 @@ object MediaStoreManager {
 
         var uri: Uri? = null
         try {
-            uri = resolver.insert(collection, contentValues) ?: return false
+            uri = resolver.insert(collection, contentValues) ?: return null
 
             resolver.openOutputStream(uri)?.use { outputStream ->
                 tempFile.inputStream().use { inputStream ->
@@ -63,14 +63,24 @@ object MediaStoreManager {
                 resolver.update(uri, contentValues, null, null)
             }
 
-            return true
+            return uri.toString()
 
         } catch (e: Exception) {
             e.printStackTrace()
             uri?.let {
                 resolver.delete(it, null, null)
             }
-            return false
+            return null
+        }
+    }
+    fun deleteFile(context: Context, uriString: String): Boolean {
+        return try {
+            val uri = Uri.parse(uriString)
+            val deletedRows = context.contentResolver.delete(uri, null, null)
+            deletedRows > 0
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
 }

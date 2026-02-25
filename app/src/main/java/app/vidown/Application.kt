@@ -1,6 +1,7 @@
 package app.vidown
 
 import android.app.Application
+import android.util.Log
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import kotlinx.coroutines.CoroutineScope
@@ -15,8 +16,9 @@ class Application : Application() {
             try {
                 YoutubeDL.getInstance().init(this@Application)
                 FFmpeg.getInstance().init(this@Application)
+                Log.d("VidownApp", "YoutubeDL and FFmpeg initialized successfully")
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("VidownApp", "Failed to initialize YoutubeDL or FFmpeg", e)
             }
         }
     }

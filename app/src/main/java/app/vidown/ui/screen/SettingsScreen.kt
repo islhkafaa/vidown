@@ -24,6 +24,7 @@ import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.PhoneAndroid
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,8 +39,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.vidown.data.repository.AppTheme
+import app.vidown.domain.manager.UpdateResult
 import app.vidown.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,6 +65,75 @@ fun SettingsScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val currentTheme by viewModel.themeState.collectAsState()
+    val isCheckingUpdate by viewModel.isCheckingUpdate.collectAsState()
+    val updateState by viewModel.updateState.collectAsState()
+
+    var showUpdateDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(updateState) {
+        if (updateState != null) {
+            showUpdateDialog = true
+        }
+    }
+
+    if (showUpdateDialog && updateState != null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = {
+                showUpdateDialog = false
+                viewModel.resetUpdateState()
+            },
+            title = { Text("Update Check") },
+            text = {
+                when (val state = updateState) {
+                    is UpdateResult.UpdateAvailable -> {
+                        Text("A new version (v${state.version}) is available. Would you like to download and install it?")
+                    }
+                    is UpdateResult.UpToDate -> {
+                        Text("You are already on the latest version!")
+                    }
+                    is UpdateResult.Error -> {
+                        Text("Failed to check for updates: ${state.message}")
+                    }
+                    null -> {}
+                }
+            },
+            confirmButton = {
+                if (updateState is UpdateResult.UpdateAvailable) {
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            val state = updateState as UpdateResult.UpdateAvailable
+                            viewModel.downloadUpdate(state.downloadUrl, "vidown-update-v${state.version}.apk")
+                            showUpdateDialog = false
+                            viewModel.resetUpdateState()
+                        }
+                    ) {
+                        Text("Download")
+                    }
+                } else {
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            showUpdateDialog = false
+                            viewModel.resetUpdateState()
+                        }
+                    ) {
+                        Text("OK")
+                    }
+                }
+            },
+            dismissButton = {
+                if (updateState is UpdateResult.UpdateAvailable) {
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            showUpdateDialog = false
+                            viewModel.resetUpdateState()
+                        }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            }
+        )
+    }
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -171,9 +246,42 @@ fun SettingsScreen(
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "v0.3.5",
+                                text = "v0.3.6",
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = !isCheckingUpdate) {
+                                viewModel.checkForUpdates("0.3.6")
+                            }
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Check for updates",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                        )
+                        if (isCheckingUpdate) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }

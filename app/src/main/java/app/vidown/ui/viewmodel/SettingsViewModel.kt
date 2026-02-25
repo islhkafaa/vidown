@@ -20,9 +20,36 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = AppTheme.SYSTEM
         )
 
+    private val updateManager = app.vidown.domain.manager.UpdateManager(application)
+
+    private val _updateState = kotlinx.coroutines.flow.MutableStateFlow<app.vidown.domain.manager.UpdateResult?>(null)
+    val updateState: StateFlow<app.vidown.domain.manager.UpdateResult?> = _updateState
+
+    private val _isCheckingUpdate = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val isCheckingUpdate: StateFlow<Boolean> = _isCheckingUpdate
+
     fun setTheme(theme: AppTheme) {
         viewModelScope.launch {
             settingsRepository.setTheme(theme)
         }
+    }
+
+    fun checkForUpdates(currentVersion: String) {
+        viewModelScope.launch {
+            _isCheckingUpdate.value = true
+            val result = updateManager.checkForUpdates(currentVersion)
+            _updateState.value = result
+            _isCheckingUpdate.value = false
+        }
+    }
+
+    fun downloadUpdate(url: String, filename: String) {
+        viewModelScope.launch {
+            updateManager.downloadAndInstallUpdate(url, filename)
+        }
+    }
+
+    fun resetUpdateState() {
+        _updateState.value = null
     }
 }

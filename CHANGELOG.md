@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.6] - 2026-02-25
+
+### Added
+- **Auto-Update System**: Integrated an Over-The-Air (OTA) update system powered by the GitHub Releases API.
+- **Launch Check**: App automatically checks for new updates in the background on startup and gracefully prompts the user.
+- **Settings Check**: Added a manual "Check for Updates" button directly into the `SettingsScreen`.
+- **Install Flow**: Downloads new `.apk` via `DownloadManager` and seamlessly triggers Android's native package installer using a FileProvider.
+
+### Changed
+- Increased application version to `0.3.6` (Version Code `5`).
+
 ## [0.3.5] - 2026-02-25
 
 ### Added

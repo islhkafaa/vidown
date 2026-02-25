@@ -14,8 +14,8 @@ android {
         applicationId = "app.vidown"
         minSdk = 28
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.3.5"
+        versionCode = 5
+        versionName = "0.3.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -74,6 +74,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
+    implementation(libs.okhttp)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

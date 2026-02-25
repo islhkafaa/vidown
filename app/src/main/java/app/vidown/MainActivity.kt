@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
                 var showStartupUpdateDialog by remember { mutableStateOf(false) }
 
                 LaunchedEffect(Unit) {
-                    settingsViewModel.checkForUpdates("0.3.6")
+                    settingsViewModel.checkForUpdates("0.4.0")
                 }
 
                 val updateState by settingsViewModel.updateState.collectAsState()

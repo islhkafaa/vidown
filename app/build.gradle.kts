@@ -14,8 +14,8 @@ android {
         applicationId = "app.vidown"
         minSdk = 28
         targetSdk = 35
-        versionCode = 5
-        versionName = "0.3.6"
+        versionCode = 6
+        versionName = "0.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

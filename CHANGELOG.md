@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-02-25
+
+### Added
+- **Storage Access Framework (SAF)**: Users can now pick custom download locations on their device beyond standard folders via the `SettingsScreen`.
+- **Concurrency Control**: Added setting to limit the number of simultaneous active downloads (1 to 5).
+- **Default Resolution Preference**: Users can now prioritize exact resolutions (like 1080p, 720p, Audio Only).
+- **Splash Screen**: Transitioned the app launch experience to the seamless Android 12+ `androidx.core:core-splashscreen` API using the custom provided logo.
+
+### Changed
+- Increased application version to `0.4.0` (Version Code `6`).
+- Optimized `WorkManager` default initialization.
+
 ## [0.3.6] - 2026-02-25
 
 ### Added

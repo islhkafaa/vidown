@@ -2,7 +2,7 @@
 
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/kotlin-%237F52FF.svg?style=for-the-badge&logo=kotlin&logoColor=white)
-![Version](https://img.shields.io/badge/version-0.3.6-blue.svg?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.4.0-blue.svg?style=for-the-badge)
 
 Vidown is a modern, background-resilient Android video downloader built with Jetpack Compose, Material 3, and `yt-dlp`.
 

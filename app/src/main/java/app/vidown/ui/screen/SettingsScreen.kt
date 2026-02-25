@@ -394,7 +394,7 @@ fun SettingsScreen(
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "v0.3.6",
+                                text = "v0.4.0",
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -410,7 +410,7 @@ fun SettingsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable(enabled = !isCheckingUpdate) {
-                                viewModel.checkForUpdates("0.3.6")
+                                viewModel.checkForUpdates("0.4.0")
                             }
                             .padding(horizontal = 20.dp, vertical = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,

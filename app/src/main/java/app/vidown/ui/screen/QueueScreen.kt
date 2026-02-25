@@ -4,7 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,10 +19,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.rounded.CloudDone
 import androidx.compose.material.icons.rounded.Error
-import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.rounded.HourglassEmpty
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -41,8 +43,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -65,7 +69,7 @@ fun QueueScreen(modifier: Modifier = Modifier, viewModel: QueueViewModel = viewM
                 title = {
                     Text(
                         text = "Downloads",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                     )
                 },
                 scrollBehavior = scrollBehavior,
@@ -85,19 +89,33 @@ fun QueueScreen(modifier: Modifier = Modifier, viewModel: QueueViewModel = viewM
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.padding(32.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.List,
-                        contentDescription = null,
-                        modifier = Modifier.size(56.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.List,
+                            contentDescription = null,
+                            modifier = Modifier.size(36.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                    Text(
+                        text = "No active downloads",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Queue is empty",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        textAlign = TextAlign.Center,
+                        text = "Downloads you start will appear here while in progress",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -107,7 +125,7 @@ fun QueueScreen(modifier: Modifier = Modifier, viewModel: QueueViewModel = viewM
                     .fillMaxSize()
                     .padding(innerPadding),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(queue, key = { it.id }) { request ->
                     DownloadItemCard(
@@ -126,93 +144,138 @@ fun QueueScreen(modifier: Modifier = Modifier, viewModel: QueueViewModel = viewM
 
 @Composable
 fun DownloadItemCard(request: DownloadRequest, modifier: Modifier = Modifier) {
+    val statusColor = when (request.status) {
+        DownloadStatus.Success -> MaterialTheme.colorScheme.primary
+        DownloadStatus.Failed -> MaterialTheme.colorScheme.error
+        DownloadStatus.Downloading -> MaterialTheme.colorScheme.tertiary
+        DownloadStatus.Pending -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-        ) {
-            if (!request.thumbnailUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = request.thumbnailUrl,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(MaterialTheme.shapes.small),
-                    contentScale = ContentScale.Crop
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-            }
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = request.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    val statusIcon = when (request.status) {
-                        DownloadStatus.Pending -> Icons.Rounded.HourglassEmpty
-                        DownloadStatus.Success -> Icons.Rounded.CloudDone
-                        DownloadStatus.Failed -> Icons.Rounded.Error
-                        DownloadStatus.Downloading -> null
-                    }
-
-                    val statusColor = when (request.status) {
-                        DownloadStatus.Success -> MaterialTheme.colorScheme.primary
-                        DownloadStatus.Failed -> MaterialTheme.colorScheme.error
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-
-                    if (statusIcon != null) {
-                        Icon(
-                            imageVector = statusIcon,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = statusColor
-                        )
-                    }
-
-                    Text(
-                        text = when (request.status) {
-                            DownloadStatus.Downloading -> "${request.progress.toInt()}% • ${(request.downloadedBytes / 1024 / 1024)}MB / ${(request.totalBytes / 1024 / 1024)}MB"
-                            else -> request.status.name
-                        },
-                        style = MaterialTheme.typography.labelMedium,
-                        color = statusColor
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(if (request.status == DownloadStatus.Downloading) 140.dp else 96.dp)
+                    .background(
+                        color = statusColor,
+                        shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)
                     )
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+            ) {
+                if (!request.thumbnailUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = request.thumbnailUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
                 }
 
-                if (request.status == DownloadStatus.Downloading) {
-                    val animatedProgress by animateFloatAsState(
-                        targetValue = request.progress / 100f,
-                        animationSpec = tween(durationMillis = 500),
-                        label = "progress_bar"
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = request.title,
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
 
-                    LinearProgressIndicator(
-                        progress = { animatedProgress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                            .clip(MaterialTheme.shapes.extraSmall),
-                    )
+                    StatusPill(status = request.status, color = statusColor)
+
+                    if (request.status == DownloadStatus.Downloading) {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "${request.progress.toInt()}%",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.tertiary
+                                )
+                                Text(
+                                    text = "${request.downloadedBytes / 1024 / 1024} / ${request.totalBytes / 1024 / 1024} MB",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            val animatedProgress by animateFloatAsState(
+                                targetValue = request.progress / 100f,
+                                animationSpec = tween(durationMillis = 500),
+                                label = "progress_bar"
+                            )
+
+                            LinearProgressIndicator(
+                                progress = { animatedProgress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(CircleShape),
+                                color = MaterialTheme.colorScheme.tertiary,
+                                trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
+                            )
+                        }
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun StatusPill(status: DownloadStatus, color: Color) {
+    val icon = when (status) {
+        DownloadStatus.Pending -> Icons.Rounded.HourglassEmpty
+        DownloadStatus.Success -> Icons.Rounded.CloudDone
+        DownloadStatus.Failed -> Icons.Rounded.Error
+        DownloadStatus.Downloading -> null
+    }
+    val label = when (status) {
+        DownloadStatus.Downloading -> "Downloading"
+        DownloadStatus.Pending -> "Pending"
+        DownloadStatus.Success -> "Done"
+        DownloadStatus.Failed -> "Failed"
+    }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(color.copy(alpha = 0.12f))
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(12.dp),
+                tint = color
+            )
+        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = color
+        )
     }
 }

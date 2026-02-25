@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.5] - 2026-02-25
+
+### Added
+- **Integrated Media Player**: Built a first-party in-app video player using `androidx.media3` (ExoPlayer). Tapping a history item now opens a full-screen player inside Vidown, auto-locking to landscape with a floating back button.
+- **Swipe-to-Delete History**: History items can now be swiped left to delete — removes both the database record and the file from device storage.
+
+### Changed
+- **Full UI/UX Redesign**: All screens (Home, Queue, History, Settings, Player, Navigation) have been comprehensively redesigned.
+  - `HomeScreen`: Gradient header, pill-shaped inline search+fetch bar, full-bleed thumbnail hero with gradient scrim.
+  - `QueueScreen` & `HistoryScreen`: Consistent card design with left-edge accent bar, status pill badges, and thicker animated progress bars.
+  - `SettingsScreen`: Theme selection as stylish icon+radio cards plus a new About section showing the app version.
+  - `Navigation Bar`: Icon-only, label-free for a minimal look; hidden entirely when in the Player.
+- Increased application version to `0.3.5` (Version Code `4`).
+
 ## [0.2.5] - 2026-02-24
 
 ### Added

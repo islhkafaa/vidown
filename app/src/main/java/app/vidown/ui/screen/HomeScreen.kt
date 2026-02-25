@@ -1,46 +1,51 @@
 package app.vidown.ui.screen
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Clear
-import androidx.compose.material.icons.rounded.FileDownload
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -51,10 +56,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -77,209 +86,261 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel()
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val keyboardController = LocalSoftwareKeyboardController.current
     var urlInput by rememberSaveable { mutableStateOf("") }
 
-    Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            LargeTopAppBar(
-                title = {
-                    Text(
-                        text = "Vidown",
-                        style = MaterialTheme.typography.headlineMedium,
-                    )
-                },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
-        },
-    ) { innerPadding ->
-        Column(
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface)
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.Top,
-        ) {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = urlInput,
-                onValueChange = { urlInput = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = {
-                    Text(
-                        text = "Paste a video URL",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-                trailingIcon = {
-                    if (urlInput.isNotEmpty()) {
-                        IconButton(onClick = { urlInput = "" }) {
-                            Icon(
-                                imageVector = Icons.Rounded.Clear,
-                                contentDescription = "Clear input",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(18.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                ),
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            var isPressed by rememberSaveable { mutableStateOf(false) }
-            val scale by animateFloatAsState(
-                targetValue = if (isPressed) 0.95f else 1f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                ),
-                label = "button_scale"
-            )
-
-            Button(
-                onClick = {
-                    keyboardController?.hide()
-                    viewModel.fetchVideoInfo(urlInput)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .scale(scale)
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onPress = {
-                                isPressed = true
-                                tryAwaitRelease()
-                                isPressed = false
-                            },
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            MaterialTheme.colorScheme.surface
                         )
-                    },
-                enabled = urlInput.isNotEmpty() && uiState !is HomeUiState.Loading,
-                shape = RoundedCornerShape(18.dp)
-            ) {
-                Text(
-                    text = "Fetch Formats",
-                    style = MaterialTheme.typography.titleMedium
+                    )
                 )
-            }
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    text = "Vidown",
+                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            AnimatedContent(
-                targetState = uiState,
-                transitionSpec = {
-                    fadeIn() togetherWith fadeOut()
-                },
-                label = "home_state"
-            ) { state ->
-                when (state) {
-                    is HomeUiState.Idle -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 2.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(start = 16.dp, end = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AnimatedContent(
+                            targetState = uiState is HomeUiState.Loading,
+                            label = "search_icon"
+                        ) { loading ->
+                            if (loading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
                                 Icon(
-                                    imageVector = Icons.Rounded.FileDownload,
+                                    imageVector = Icons.Rounded.Search,
                                     contentDescription = null,
-                                    modifier = Modifier.size(56.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                )
-                                Text(
-                                    text = "No downloads yet",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                    textAlign = TextAlign.Center,
-                                )
-                                Text(
-                                    text = "Paste a link above to get started",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                    textAlign = TextAlign.Center,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
-                    }
 
-                    is HomeUiState.Loading -> {
+                        TextField(
+                            value = urlInput,
+                            onValueChange = { urlInput = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = {
+                                Text(
+                                    text = "Paste a video URL...",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            },
+                            singleLine = true,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                            ),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = {
+                                keyboardController?.hide()
+                                viewModel.fetchVideoInfo(urlInput)
+                            })
+                        )
+
+                        AnimatedVisibility(visible = urlInput.isNotEmpty()) {
+                            IconButton(onClick = {
+                                urlInput = ""
+                                viewModel.resetState()
+                            }) {
+                                Icon(
+                                    Icons.Rounded.Clear,
+                                    contentDescription = "Clear",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+
+                        var isPressed by rememberSaveable { mutableStateOf(false) }
+                        val scale by animateFloatAsState(
+                            targetValue = if (isPressed) 0.9f else 1f,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium
+                            ),
+                            label = "btn_scale"
+                        )
+
                         Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .scale(scale)
+                                .clip(CircleShape)
+                                .background(
+                                    if (urlInput.isNotEmpty() && uiState !is HomeUiState.Loading)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                                )
+                                .pointerInput(urlInput, uiState) {
+                                    if (urlInput.isNotEmpty() && uiState !is HomeUiState.Loading) {
+                                        detectTapGestures(
+                                            onPress = {
+                                                isPressed = true
+                                                tryAwaitRelease()
+                                                isPressed = false
+                                            },
+                                            onTap = {
+                                                keyboardController?.hide()
+                                                viewModel.fetchVideoInfo(urlInput)
+                                            }
+                                        )
+                                    }
+                                }
+                                .padding(10.dp)
                         ) {
-                            CircularProgressIndicator()
+                            Icon(
+                                imageVector = Icons.Rounded.ArrowForward,
+                                contentDescription = "Fetch",
+                                tint = if (urlInput.isNotEmpty() && uiState !is HomeUiState.Loading)
+                                    MaterialTheme.colorScheme.onPrimary
+                                else
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
+                }
+            }
+        }
 
-                    is HomeUiState.Error -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center,
+        AnimatedContent(
+            targetState = uiState,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "home_state",
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(1f)
+        ) { state ->
+            when (state) {
+                is HomeUiState.Idle -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(32.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(72.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Download,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(36.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            Text(
+                                text = "Ready to download",
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Paste any video URL in the search bar above to fetch available formats",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                is HomeUiState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                is HomeUiState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Card(
+                            modifier = Modifier.padding(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
                         ) {
                             Text(
                                 text = state.message,
-                                color = MaterialTheme.colorScheme.error,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(16.dp)
+                                modifier = Modifier.padding(20.dp),
+                                style = MaterialTheme.typography.bodyMedium
                             )
                         }
                     }
+                }
 
-                    is HomeUiState.Success -> {
-                        VideoDetailsContent(
-                            videoInfo = state.videoInfo,
-                            onFormatSelected = { format ->
-                                val downloadFormatId = if (format.isVideo && format.acodec == "none") {
-                                    "${format.formatId}+bestaudio"
-                                } else {
-                                    format.formatId
-                                }
-
-                                val request = DownloadRequest(
-                                    url = urlInput,
-                                    title = state.videoInfo.title,
-                                    thumbnailUrl = state.videoInfo.thumbnailUrl,
-                                    formatId = downloadFormatId
-                                )
-
-                                DownloadQueueRepository.addDownload(request)
-
-                                val inputData = Data.Builder()
-                                    .putString(DownloadWorker.KEY_URL, urlInput)
-                                    .putString(DownloadWorker.KEY_FORMAT_ID, downloadFormatId)
-                                    .putString(DownloadWorker.KEY_REQUEST_ID, request.id.toString())
-                                    .putString(DownloadWorker.KEY_TITLE, state.videoInfo.title)
-                                    .putLong(DownloadWorker.KEY_TOTAL_BYTES, format.displaySize)
-                                    .build()
-
-                                val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
-                                    .setInputData(inputData)
-                                    .build()
-
-                                WorkManager.getInstance(context).enqueue(workRequest)
+                is HomeUiState.Success -> {
+                    VideoDetailsContent(
+                        videoInfo = state.videoInfo,
+                        onFormatSelected = { format ->
+                            val downloadFormatId = if (format.isVideo && format.acodec == "none") {
+                                "${format.formatId}+bestaudio"
+                            } else {
+                                format.formatId
                             }
-                        )
-                    }
+
+                            val request = DownloadRequest(
+                                url = urlInput,
+                                title = state.videoInfo.title,
+                                thumbnailUrl = state.videoInfo.thumbnailUrl,
+                                formatId = downloadFormatId
+                            )
+
+                            DownloadQueueRepository.addDownload(request)
+
+                            val inputData = Data.Builder()
+                                .putString(DownloadWorker.KEY_URL, urlInput)
+                                .putString(DownloadWorker.KEY_FORMAT_ID, downloadFormatId)
+                                .putString(DownloadWorker.KEY_REQUEST_ID, request.id.toString())
+                                .putString(DownloadWorker.KEY_TITLE, state.videoInfo.title)
+                                .putLong(DownloadWorker.KEY_TOTAL_BYTES, format.displaySize)
+                                .build()
+
+                            val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
+                                .setInputData(inputData)
+                                .build()
+
+                            WorkManager.getInstance(context).enqueue(workRequest)
+                        }
+                    )
                 }
             }
         }
@@ -293,45 +354,79 @@ fun VideoDetailsContent(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(bottom = 32.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp)
     ) {
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large,
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
-                Column {
+                Box {
                     if (!videoInfo.thumbnailUrl.isNullOrBlank()) {
                         AsyncImage(
                             model = videoInfo.thumbnailUrl,
-                            contentDescription = "Video Thumbnail",
+                            contentDescription = "Thumbnail",
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(200.dp)
-                                .clip(MaterialTheme.shapes.large),
+                                .height(220.dp)
+                                .clip(RoundedCornerShape(20.dp)),
                             contentScale = ContentScale.Crop
                         )
-                    }
-
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = videoInfo.title,
-                            style = MaterialTheme.typography.titleLarge,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(220.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Transparent,
+                                            Color.Black.copy(alpha = 0.75f)
+                                        ),
+                                        startY = 80f
+                                    )
+                                )
                         )
-
-                        if (!videoInfo.uploader.isNullOrBlank()) {
-                            Spacer(modifier = Modifier.height(4.dp))
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(16.dp)
+                        ) {
                             Text(
-                                text = videoInfo.uploader,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = videoInfo.title,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = Color.White,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
+                            if (!videoInfo.uploader.isNullOrBlank()) {
+                                Text(
+                                    text = videoInfo.uploader,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    } else {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = videoInfo.title,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            if (!videoInfo.uploader.isNullOrBlank()) {
+                                Text(
+                                    text = videoInfo.uploader,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
@@ -341,8 +436,9 @@ fun VideoDetailsContent(
         item {
             Text(
                 text = "Available Formats",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(vertical = 8.dp)
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
             )
         }
 
@@ -351,10 +447,7 @@ fun VideoDetailsContent(
             .sortedByDescending { it.displaySize }
 
         items(validFormats) { format ->
-            FormatChip(
-                format = format,
-                onClick = { onFormatSelected(format) }
-            )
+            FormatChip(format = format, onClick = { onFormatSelected(format) })
         }
     }
 }
@@ -367,32 +460,68 @@ fun FormatChip(
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = CardDefaults.outlinedCardBorder()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "${format.resolution ?: "Audio"} • ${format.ext.uppercase()}",
-                    style = MaterialTheme.typography.titleSmall
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                val isAudioOnly = !format.isVideo || format.acodec == "none" && format.resolution == null
+                val chipLabel = format.resolution ?: "Audio"
+                val chipColor = if (format.isVideo && format.acodec != "none")
+                    MaterialTheme.colorScheme.primaryContainer
+                else if (format.isVideo)
+                    MaterialTheme.colorScheme.secondaryContainer
+                else
+                    MaterialTheme.colorScheme.tertiaryContainer
+
+                val chipTextColor = if (format.isVideo && format.acodec != "none")
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                else if (format.isVideo)
+                    MaterialTheme.colorScheme.onSecondaryContainer
+                else
+                    MaterialTheme.colorScheme.onTertiaryContainer
+
+                SuggestionChip(
+                    onClick = {},
+                    enabled = false,
+                    label = {
+                        Text(
+                            text = chipLabel,
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    },
+                    colors = SuggestionChipDefaults.suggestionChipColors(
+                        disabledContainerColor = chipColor,
+                        disabledLabelColor = chipTextColor
+                    ),
+                    border = null
                 )
-                if (!format.vcodec.isNullOrBlank() || !format.acodec.isNullOrBlank()) {
+
+                Text(
+                    text = format.ext.uppercase(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                if (!format.acodec.isNullOrBlank() && format.acodec != "none" && format.isVideo) {
                     Text(
-                        text = listOfNotNull(
-                            if (format.isVideo) "Video" else null,
-                            if (!format.acodec.isNullOrBlank() && format.acodec != "none") "Audio" else null
-                        ).joinToString(" + "),
+                        text = "+ Audio",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -401,14 +530,14 @@ fun FormatChip(
             if (mb > 0) {
                 Text(
                     text = String.format("%.1f MB", mb),
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary
                 )
             } else {
                 Text(
-                    text = "Unknown Size",
+                    text = "Unknown",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 )
             }
         }

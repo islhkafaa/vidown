@@ -4,30 +4,44 @@ import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.common.MediaItem
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.PlayerView
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 import java.net.URLDecoder
 
 @Composable
-fun PlayerScreen(encodedUri: String, modifier: Modifier = Modifier) {
+fun PlayerScreen(
+    encodedUri: String,
+    onBack: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val decodedUri = remember(encodedUri) { URLDecoder.decode(encodedUri, "UTF-8") }
+
 
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
@@ -38,16 +52,13 @@ fun PlayerScreen(encodedUri: String, modifier: Modifier = Modifier) {
         }
     }
 
-    var lifecycle by remember {
-        mutableStateOf(Lifecycle.Event.ON_CREATE)
-    }
+    var lifecycle by remember { mutableStateOf(Lifecycle.Event.ON_CREATE) }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             lifecycle = event
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
             exoPlayer.release()
@@ -56,12 +67,8 @@ fun PlayerScreen(encodedUri: String, modifier: Modifier = Modifier) {
 
     LaunchedEffect(lifecycle) {
         when (lifecycle) {
-            Lifecycle.Event.ON_PAUSE -> {
-                exoPlayer.pause()
-            }
-            Lifecycle.Event.ON_RESUME -> {
-                exoPlayer.play()
-            }
+            Lifecycle.Event.ON_PAUSE -> exoPlayer.pause()
+            Lifecycle.Event.ON_RESUME -> exoPlayer.play()
             else -> Unit
         }
     }
@@ -73,15 +80,29 @@ fun PlayerScreen(encodedUri: String, modifier: Modifier = Modifier) {
     ) {
         AndroidView(
             factory = {
-                PlayerView(context).apply {
+                PlayerView(it).apply {
                     player = exoPlayer
                     useController = true
                 }
             },
-            update = {
-                it.player = exoPlayer
-            },
+            update = { it.player = exoPlayer },
             modifier = Modifier.fillMaxSize()
         )
+
+        Surface(
+            shape = CircleShape,
+            color = Color.Black.copy(alpha = 0.4f),
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(12.dp)
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White
+                )
+            }
+        }
     }
 }

@@ -6,11 +6,36 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.documentfile.provider.DocumentFile
 import java.io.File
 
 object MediaStoreManager {
-    fun saveFile(context: Context, tempFile: File, title: String, mimeType: String, isVideo: Boolean): String? {
+    fun saveFile(context: Context, tempFile: File, title: String, mimeType: String, isVideo: Boolean, customDirUri: String? = null): String? {
         val resolver = context.contentResolver
+
+        if (!customDirUri.isNullOrEmpty()) {
+            try {
+                val directoryUri = Uri.parse(customDirUri)
+                val documentFile = DocumentFile.fromTreeUri(context, directoryUri)
+                if (documentFile != null && documentFile.canWrite()) {
+                    val fullFileName = "${title}.${tempFile.extension}"
+                    var targetFile = documentFile.findFile(fullFileName)
+                    if (targetFile == null) {
+                        targetFile = documentFile.createFile(mimeType, fullFileName)
+                    }
+                    if (targetFile != null) {
+                        resolver.openOutputStream(targetFile.uri)?.use { outputStream ->
+                            tempFile.inputStream().use { inputStream ->
+                                inputStream.copyTo(outputStream)
+                            }
+                        }
+                        return targetFile.uri.toString()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
 
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             if (isVideo) {

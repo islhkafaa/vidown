@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
     implementation(libs.okhttp)
+    implementation("androidx.documentfile:documentfile:1.0.1")
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

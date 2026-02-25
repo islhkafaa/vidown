@@ -21,6 +21,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = AppTheme.SYSTEM
         )
 
+    val downloadUriState: StateFlow<String?> = settingsRepository.downloadUriFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
     private val updateManager = app.vidown.domain.manager.UpdateManager(application)
 
     private val _updateState = kotlinx.coroutines.flow.MutableStateFlow<app.vidown.domain.manager.UpdateResult?>(null)
@@ -40,6 +47,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setTheme(theme: AppTheme) {
         viewModelScope.launch {
             settingsRepository.setTheme(theme)
+        }
+    }
+
+    fun setDownloadUri(uri: String?) {
+        viewModelScope.launch {
+            settingsRepository.setDownloadUri(uri)
         }
     }
 

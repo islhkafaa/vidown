@@ -19,6 +19,7 @@ class SettingsRepository(private val context: Context) {
 
     companion object {
         val THEME_KEY = stringPreferencesKey("app_theme")
+        val DOWNLOAD_URI_KEY = stringPreferencesKey("download_uri")
     }
 
     val themeFlow: Flow<AppTheme> = context.dataStore.data
@@ -31,9 +32,24 @@ class SettingsRepository(private val context: Context) {
             }
         }
 
+    val downloadUriFlow: Flow<String?> = context.dataStore.data
+        .map { preferences ->
+            preferences[DOWNLOAD_URI_KEY]
+        }
+
     suspend fun setTheme(theme: AppTheme) {
         context.dataStore.edit { preferences ->
             preferences[THEME_KEY] = theme.name
+        }
+    }
+
+    suspend fun setDownloadUri(uriString: String?) {
+        context.dataStore.edit { preferences ->
+            if (uriString == null) {
+                preferences.remove(DOWNLOAD_URI_KEY)
+            } else {
+                preferences[DOWNLOAD_URI_KEY] = uriString
+            }
         }
     }
 }

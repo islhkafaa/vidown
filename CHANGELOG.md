@@ -6,8 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - **Auto-Update System**: Integrated an Over-The-Air (OTA) update system powered by the GitHub Releases API.
+- **Extractor Updates**: The underlying `yt-dlp` engine automatically pulls the latest stable extractors in the background every 3 days using Android's `WorkManager` so downloads never unexpectedly break.
 - **Launch Check**: App automatically checks for new updates in the background on startup and gracefully prompts the user.
-- **Settings Check**: Added a manual "Check for Updates" button directly into the `SettingsScreen`.
+- **Settings Check**: Added a manual "Check for Updates" and "Update Download Extractors" button directly into the `SettingsScreen`.
 - **Install Flow**: Downloads new `.apk` via `DownloadManager` and seamlessly triggers Android's native package installer using a FileProvider.
 
 ### Changed

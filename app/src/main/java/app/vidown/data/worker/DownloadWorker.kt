@@ -20,6 +20,7 @@ import com.yausername.youtubedl_android.YoutubeDLRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.firstOrNull
 import java.io.File
 import java.util.UUID
 import android.webkit.MimeTypeMap
@@ -143,12 +144,16 @@ class DownloadWorker(
 
             val isVideo = extension in listOf("mp4", "webm", "mkv", "avi")
 
+            val settingsRepository = app.vidown.data.repository.SettingsRepository(applicationContext)
+            val customUri = settingsRepository.downloadUriFlow.firstOrNull()
+
             val savedUriString = MediaStoreManager.saveFile(
                 context = applicationContext,
                 tempFile = downloadedFile,
                 title = safeTitle,
                 mimeType = mimeType,
-                isVideo = isVideo
+                isVideo = isVideo,
+                customDirUri = customUri
             )
 
             if (downloadedFile.exists()) {

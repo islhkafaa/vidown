@@ -2,51 +2,56 @@ package app.vidown.ui.screen
 
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.CloudDone
+import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.History
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -59,9 +64,6 @@ import app.vidown.domain.models.DownloadStatus
 import app.vidown.ui.viewmodel.HistoryViewModel
 import coil.compose.AsyncImage
 import java.net.URLEncoder
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,6 +75,24 @@ fun HistoryScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val historyList by viewModel.historyState.collectAsState()
     val context = LocalContext.current
+    var pendingDelete by remember { mutableStateOf<HistoryEntity?>(null) }
+
+    if (pendingDelete != null) {
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("Remove from history") },
+            text = { Text("This will remove the record but not delete the file.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteRecord(pendingDelete!!, context)
+                    pendingDelete = null
+                }) { Text("Remove") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) { Text("Cancel") }
+            }
+        )
+    }
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -139,49 +159,31 @@ fun HistoryScreen(
                 }
             }
         } else {
-            LazyColumn(
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Fixed(2),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                contentPadding = PaddingValues(12.dp),
+                verticalItemSpacing = 8.dp,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(historyList, key = { it.id }) { record ->
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = { value ->
-                            if (value == SwipeToDismissBoxValue.EndToStart) {
-                                viewModel.deleteRecord(record, context)
-                                true
-                            } else false
-                        }
-                    )
-
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        enableDismissFromStartToEnd = false,
-                        backgroundContent = {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(MaterialTheme.colorScheme.errorContainer),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Delete,
-                                    contentDescription = "Delete",
-                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.padding(end = 20.dp)
-                                )
+                    GalleryHistoryItem(
+                        record = record,
+                        onTap = {
+                            if (record.status == DownloadStatus.Success && record.fileUri != null) {
+                                val encodedUri = URLEncoder.encode(record.fileUri, "UTF-8")
+                                onPlayEvent(encodedUri)
+                            } else if (record.status == DownloadStatus.Failed) {
+                                Toast.makeText(context, "Download failed", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "File unavailable", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        modifier = Modifier.animateItem()
-                    ) {
-                        HistoryItemCard(
-                            record = record,
-                            onPlayEvent = onPlayEvent
-                        )
-                    }
+                        onLongPress = { pendingDelete = record },
+                        modifier = Modifier
+                    )
                 }
             }
         }
@@ -189,114 +191,118 @@ fun HistoryScreen(
 }
 
 @Composable
-fun HistoryItemCard(
+fun GalleryHistoryItem(
     record: HistoryEntity,
-    onPlayEvent: (String) -> Unit,
+    onTap: () -> Unit,
+    onLongPress: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
+    val isFailed = record.status == DownloadStatus.Failed
+    val isAudio = record.formatId.contains("audio") || record.formatId.contains("m4a") || record.formatId.contains("mp3")
 
-    val statusColor = when (record.status) {
-        DownloadStatus.Success -> MaterialTheme.colorScheme.primary
-        DownloadStatus.Failed -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.95f else 1f,
+        animationSpec = tween(100),
+        label = "gallery_press"
+    )
+    val overlayAlpha by animateColorAsState(
+        targetValue = if (pressed) Color.White.copy(alpha = 0.08f) else Color.Transparent,
+        animationSpec = tween(100),
+        label = "gallery_overlay"
+    )
 
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        ),
-        elevation = CardDefaults.cardElevation(0.dp),
-        onClick = {
-            if (record.status == DownloadStatus.Success && record.fileUri != null) {
-                val encodedUri = URLEncoder.encode(record.fileUri, "UTF-8")
-                onPlayEvent(encodedUri)
-            } else if (record.status == DownloadStatus.Failed) {
-                Toast.makeText(context, "Download failed", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(context, "File unavailable", Toast.LENGTH_SHORT).show()
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .scale(scale)
+            .pointerInput(onTap, onLongPress) {
+                detectTapGestures(
+                    onPress = {
+                        pressed = true
+                        try {
+                            awaitRelease()
+                        } finally {
+                            pressed = false
+                        }
+                    },
+                    onTap = { onTap() },
+                    onLongPress = { onLongPress() }
+                )
             }
-        }
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .size(width = 4.dp, height = 96.dp)
-                    .background(
-                        color = statusColor,
-                        shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)
-                    )
-            )
-
-            Row(
+        if (!record.thumbnailUrl.isNullOrBlank() && !isAudio) {
+            AsyncImage(
+                model = record.thumbnailUrl,
+                contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp)
+                    .aspectRatio(16f / 9f),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
             ) {
-                if (!record.thumbnailUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = record.thumbnailUrl,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(RoundedCornerShape(12.dp)),
-                        contentScale = ContentScale.Crop
+                Icon(
+                    imageVector = if (isAudio) Icons.Rounded.MusicNote else Icons.Rounded.BrokenImage,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(overlayAlpha)
+        )
+
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.72f)),
+                        startY = 40f
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                }
+                )
+        )
 
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = record.title,
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(10.dp)
+        ) {
+            Text(
+                text = record.title,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
 
-                    val sdf = SimpleDateFormat("MMM dd, yyyy h:mm a", Locale.getDefault())
-                    Text(
-                        text = sdf.format(Date(record.timestampMs)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    val mb = record.totalBytes / (1024 * 1024).toDouble()
-                    val sizeStr = if (mb > 0) String.format("%.1f MB", mb) else "Unknown"
-                    val statusIcon = when (record.status) {
-                        DownloadStatus.Success -> Icons.Rounded.CloudDone
-                        DownloadStatus.Failed -> Icons.Rounded.Error
-                        else -> null
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(statusColor.copy(alpha = 0.12f))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
-                    ) {
-                        if (statusIcon != null) {
-                            Icon(
-                                imageVector = statusIcon,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = statusColor
-                            )
-                        }
-                        Text(
-                            text = "${record.status.name} \u2022 $sizeStr",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = statusColor
-                        )
-                    }
-                }
+        if (isFailed) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = "Failed",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
             }
         }
     }

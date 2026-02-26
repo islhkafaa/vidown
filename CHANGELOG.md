@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.2] - 2026-02-26
+
+### Added
+- **Gallery History View**: Completely redesigned history screen using a 2-column staggered grid with visual thumbnails.
+- **Minimalist Player**: Redesigned video player with clean overlay, quick 5s skip buttons, and auto-hiding controls.
+- **Download Notifications**: Integrated active download queue into a notification bell icon (bottom sheet) and improved foreground notifications.
+- **Start Animation**: Added visual pulse animation and snackbar feedback when starting a download.
+- **Smart Versioning**: App version is now dynamically synced from `build.gradle.kts` across the UI.
+
+### Changed
+- Increased application version to `0.4.2` (Version Code `7`).
+- Optimized APK output naming (e.g., `vidown-arm64-v8a-0.4.2.apk`).
+- Removed the dedicated "Queue" bottom navigation tab.
+
+### Fixed
+- Resolved `ExoPlayer` seek increment build errors.
+- Fixed layout and import issues in `MainActivity.kt`.
+
 ## [0.4.0] - 2026-02-25
 
 ### Added

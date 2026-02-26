@@ -14,8 +14,8 @@ android {
         applicationId = "app.vidown"
         minSdk = 28
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.4.0"
+        versionCode = 7
+        versionName = "0.4.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -39,6 +39,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     splits {
@@ -47,6 +48,16 @@ android {
             reset()
             include("armeabi-v7a", "arm64-v8a")
             isUniversalApk = false
+        }
+    }
+
+    applicationVariants.all {
+        outputs.all {
+            val output = this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
+            val abi = output.getFilter(com.android.build.OutputFile.ABI)
+            if (abi != null) {
+                output.outputFileName = "vidown-$abi-${versionName}.apk"
+            }
         }
     }
 

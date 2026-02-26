@@ -50,6 +50,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _isCheckingUpdate = kotlinx.coroutines.flow.MutableStateFlow(false)
     val isCheckingUpdate: StateFlow<Boolean> = _isCheckingUpdate
 
+    val downloadProgress: StateFlow<Float?> = updateManager.downloadProgress
+
     private val ytDlpRepository = YtDlpRepository(application)
 
     private val _isUpdatingExtractors = kotlinx.coroutines.flow.MutableStateFlow(false)
@@ -93,7 +95,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun downloadUpdate(url: String, filename: String) {
         viewModelScope.launch {
-            updateManager.downloadAndInstallUpdate(url, filename)
+            val result = updateManager.downloadAndInstallUpdate(url, filename)
+            if (result) {
+                 _updateState.value = null
+            }
         }
     }
 

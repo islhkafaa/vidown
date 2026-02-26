@@ -11,7 +11,9 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -21,7 +23,8 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
-import kotlin.coroutines.resume
+import java.io.FileOutputStream
+import java.io.InputStream
 
 sealed class UpdateResult {
     data class UpdateAvailable(val version: String, val downloadUrl: String) : UpdateResult()
@@ -32,6 +35,9 @@ sealed class UpdateResult {
 class UpdateManager(private val context: Context) {
     private val client = OkHttpClient()
     private val json = Json { ignoreUnknownKeys = true }
+
+    private val _downloadProgress = MutableStateFlow<Float?>(null)
+    val downloadProgress: StateFlow<Float?> = _downloadProgress.asStateFlow()
 
     private val githubApiUrl = "https://api.github.com/repos/islhkafaa/vidown/releases/latest"
 
@@ -76,58 +82,61 @@ class UpdateManager(private val context: Context) {
         }
     }
 
-    suspend fun downloadAndInstallUpdate(downloadUrl: String, filename: String): Boolean = suspendCancellableCoroutine { continuation ->
-        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+    suspend fun downloadAndInstallUpdate(downloadUrl: String, filename: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            _downloadProgress.value = 0f
+            val request = Request.Builder().url(downloadUrl).build()
+            val response = client.newCall(request).execute()
 
-        val uri = Uri.parse(downloadUrl)
-        val request = DownloadManager.Request(uri)
-            .setTitle("Downloading Vidown Update")
-            .setDescription("Downloading latest version...")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename)
+            if (!response.isSuccessful) {
+                _downloadProgress.value = null
+                return@withContext false
+            }
 
-        val downloadId = downloadManager.enqueue(request)
+            val body = response.body ?: run {
+                _downloadProgress.value = null
+                return@withContext false
+            }
 
-        val onComplete = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-                if (id == downloadId) {
-                    context.unregisterReceiver(this)
+            val totalBytes = body.contentLength()
+            val updatesDir = File(context.cacheDir, "updates")
+            if (!updatesDir.exists()) updatesDir.mkdirs()
 
-                    val query = DownloadManager.Query().setFilterById(downloadId)
-                    val cursor = downloadManager.query(query)
-                    if (cursor.moveToFirst()) {
-                        val statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                        val status = cursor.getInt(statusIndex)
-                        if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                            val uri = downloadManager.getUriForDownloadedFile(downloadId)
-                            if (uri != null) {
-                                installApk(uri)
-                                continuation.resume(true)
-                            } else {
-                                continuation.resume(false)
-                            }
-                        } else {
-                            continuation.resume(false)
-                        }
-                    } else {
-                        continuation.resume(false)
-                    }
-                    cursor.close()
+            val apkFile = File(updatesDir, filename)
+            if (apkFile.exists()) apkFile.delete()
+
+            val inputStream: InputStream = body.byteStream()
+            val outputStream = FileOutputStream(apkFile)
+            val buffer = ByteArray(8192)
+            var bytesRead: Int
+            var totalRead = 0L
+
+            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                outputStream.write(buffer, 0, bytesRead)
+                totalRead += bytesRead
+                if (totalBytes > 0) {
+                    _downloadProgress.value = totalRead.toFloat() / totalBytes
                 }
             }
-        }
 
-        ContextCompat.registerReceiver(
-            context,
-            onComplete,
-            IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-            ContextCompat.RECEIVER_EXPORTED
-        )
+            outputStream.flush()
+            outputStream.close()
+            inputStream.close()
 
-        continuation.invokeOnCancellation {
-            downloadManager.remove(downloadId)
-            context.unregisterReceiver(onComplete)
+            _downloadProgress.value = 1f
+
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                apkFile
+            )
+            installApk(uri)
+            _downloadProgress.value = null
+            true
+        } catch (e: Exception) {
+            Log.e("UpdateManager", "Manual download failed", e)
+            _downloadProgress.value = null
+            false
         }
     }
 

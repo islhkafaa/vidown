@@ -24,6 +24,9 @@ import kotlinx.coroutines.flow.firstOrNull
 import java.io.File
 import java.util.UUID
 import android.webkit.MimeTypeMap
+import android.app.PendingIntent
+import android.content.Intent
+import android.net.Uri
 
 class DownloadWorker(
     appContext: Context,
@@ -175,6 +178,8 @@ class DownloadWorker(
                         fileUri = savedUriString
                     )
                 )
+
+                showSuccessNotification(safeTitle, savedUriString, mimeType)
                 Result.success()
             } else {
                 throw Exception("Failed to save to MediaStore")
@@ -196,8 +201,44 @@ class DownloadWorker(
                     fileUri = null
                 )
             )
+            showFailureNotification(title)
             Result.failure()
         }
+    }
+
+    private fun showSuccessNotification(title: String, uriString: String, mimeType: String) {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.parse(uriString), mimeType)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            id.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+            .setContentTitle("Download Complete")
+            .setContentText(title)
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        notificationManager.notify(id.hashCode() + 1, notification)
+    }
+
+    private fun showFailureNotification(title: String) {
+        val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+            .setContentTitle("Download Failed")
+            .setContentText(title)
+            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setAutoCancel(true)
+            .build()
+
+        notificationManager.notify(id.hashCode() + 1, notification)
     }
 
     companion object {

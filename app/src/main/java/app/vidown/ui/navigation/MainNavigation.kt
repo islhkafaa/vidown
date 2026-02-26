@@ -2,7 +2,6 @@ package app.vidown.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Settings
@@ -23,12 +22,10 @@ import androidx.navigation.navArgument
 import app.vidown.ui.screen.HistoryScreen
 import app.vidown.ui.screen.HomeScreen
 import app.vidown.ui.screen.PlayerScreen
-import app.vidown.ui.screen.QueueScreen
 import app.vidown.ui.screen.SettingsScreen
 
 sealed class Screen(val route: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     data object Home : Screen("home", Icons.Rounded.Home)
-    data object Queue : Screen("queue", Icons.AutoMirrored.Rounded.List)
     data object History : Screen("history", Icons.Rounded.History)
     data object Settings : Screen("settings", Icons.Rounded.Settings)
 }
@@ -38,7 +35,7 @@ private const val PLAYER_ROUTE = "player/{encodedUri}"
 @Composable
 fun MainNavigation() {
     val navController = rememberNavController()
-    val items = listOf(Screen.Home, Screen.Queue, Screen.History, Screen.Settings)
+    val items = listOf(Screen.Home, Screen.History, Screen.Settings)
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val isPlayerActive = currentRoute?.startsWith("player") == true
@@ -73,7 +70,6 @@ fun MainNavigation() {
             modifier = if (isPlayerActive) Modifier else Modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) { HomeScreen() }
-            composable(Screen.Queue.route) { QueueScreen() }
             composable(Screen.History.route) {
                 HistoryScreen(
                     onPlayEvent = { encodedUri ->
@@ -84,7 +80,28 @@ fun MainNavigation() {
             composable(Screen.Settings.route) { SettingsScreen() }
             composable(
                 route = PLAYER_ROUTE,
-                arguments = listOf(navArgument("encodedUri") { type = NavType.StringType })
+                arguments = listOf(navArgument("encodedUri") { type = NavType.StringType }),
+                enterTransition = {
+                    androidx.compose.animation.slideInVertically(
+                        initialOffsetY = { it },
+                        animationSpec = androidx.compose.animation.core.tween(400)
+                    ) + androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(400))
+                },
+                exitTransition = {
+                    androidx.compose.animation.slideOutVertically(
+                        targetOffsetY = { it },
+                        animationSpec = androidx.compose.animation.core.tween(400)
+                    ) + androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(400))
+                },
+                popEnterTransition = {
+                    androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(400))
+                },
+                popExitTransition = {
+                    androidx.compose.animation.slideOutVertically(
+                        targetOffsetY = { it },
+                        animationSpec = androidx.compose.animation.core.tween(400)
+                    ) + androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(400))
+                }
             ) { backStackEntry ->
                 val encodedUri = backStackEntry.arguments?.getString("encodedUri") ?: ""
                 PlayerScreen(

@@ -1,4 +1,5 @@
 package app.vidown
+import app.vidown.BuildConfig
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -15,6 +16,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.vidown.data.repository.AppTheme
 import app.vidown.domain.manager.UpdateResult
@@ -41,10 +47,11 @@ class MainActivity : ComponentActivity() {
                 var showStartupUpdateDialog by remember { mutableStateOf(false) }
 
                 LaunchedEffect(Unit) {
-                    settingsViewModel.checkForUpdates("0.4.0")
+                    settingsViewModel.checkForUpdates(BuildConfig.VERSION_NAME)
                 }
 
                 val updateState by settingsViewModel.updateState.collectAsState()
+                val downloadProgress by settingsViewModel.downloadProgress.collectAsState()
 
                 LaunchedEffect(updateState) {
                     if (updateState is UpdateResult.UpdateAvailable) {
@@ -60,16 +67,31 @@ class MainActivity : ComponentActivity() {
                             settingsViewModel.resetUpdateState()
                         },
                         title = { Text("Update Available") },
-                        text = { Text("A new version of Vidown (v${state.version}) is available. Would you like to install it now?") },
+                        text = {
+                            androidx.compose.foundation.layout.Column {
+                                Text("A new version of Vidown (v${state.version}) is available. Would you like to install it now?")
+                                if (downloadProgress != null) {
+                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp))
+                                    androidx.compose.material3.LinearProgressIndicator(
+                                        progress = { downloadProgress ?: 0f },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                    Text(
+                                        text = "Downloading: ${(downloadProgress!! * 100).toInt()}%",
+                                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                }
+                            }
+                        },
                         confirmButton = {
                             TextButton(
                                 onClick = {
                                     settingsViewModel.downloadUpdate(state.downloadUrl, "vidown-update-v${state.version}.apk")
-                                    showStartupUpdateDialog = false
-                                    settingsViewModel.resetUpdateState()
-                                }
+                                },
+                                enabled = downloadProgress == null
                             ) {
-                                Text("Update")
+                                Text(if (downloadProgress != null) "Downloading..." else "Update")
                             }
                         },
                         dismissButton = {
@@ -77,7 +99,8 @@ class MainActivity : ComponentActivity() {
                                 onClick = {
                                     showStartupUpdateDialog = false
                                     settingsViewModel.resetUpdateState()
-                                }
+                                },
+                                enabled = downloadProgress == null
                             ) {
                                 Text("Later")
                             }

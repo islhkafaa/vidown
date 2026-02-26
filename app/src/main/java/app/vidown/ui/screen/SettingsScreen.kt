@@ -1,4 +1,5 @@
 package app.vidown.ui.screen
+import app.vidown.BuildConfig
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -82,6 +83,7 @@ fun SettingsScreen(
     val downloadUriState by viewModel.downloadUriState.collectAsState()
     val concurrentDownloadsState by viewModel.concurrentDownloadsState.collectAsState()
     val defaultResolutionState by viewModel.defaultResolutionState.collectAsState()
+    val downloadProgress by viewModel.downloadProgress.collectAsState()
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
@@ -110,7 +112,21 @@ fun SettingsScreen(
             text = {
                 when (val state = updateState) {
                     is UpdateResult.UpdateAvailable -> {
-                        Text("A new version (v${state.version}) is available. Would you like to download and install it?")
+                        Column {
+                            Text("A new version (v${state.version}) is available. Would you like to download and install it?")
+                            if (downloadProgress != null) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                androidx.compose.material3.LinearProgressIndicator(
+                                    progress = { downloadProgress ?: 0f },
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                                Text(
+                                    text = "Downloading: ${(downloadProgress!! * 100).toInt()}%",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
                     }
                     is UpdateResult.UpToDate -> {
                         Text("You are already on the latest version!")
@@ -127,11 +143,10 @@ fun SettingsScreen(
                         onClick = {
                             val state = updateState as UpdateResult.UpdateAvailable
                             viewModel.downloadUpdate(state.downloadUrl, "vidown-update-v${state.version}.apk")
-                            showUpdateDialog = false
-                            viewModel.resetUpdateState()
-                        }
+                        },
+                        enabled = downloadProgress == null
                     ) {
-                        Text("Download")
+                        Text(if (downloadProgress != null) "Downloading..." else "Download")
                     }
                 } else {
                     androidx.compose.material3.TextButton(
@@ -150,7 +165,8 @@ fun SettingsScreen(
                         onClick = {
                             showUpdateDialog = false
                             viewModel.resetUpdateState()
-                        }
+                        },
+                        enabled = downloadProgress == null
                     ) {
                         Text("Cancel")
                     }
@@ -394,7 +410,7 @@ fun SettingsScreen(
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "v0.4.0",
+                                text = "v${BuildConfig.VERSION_NAME}",
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -410,7 +426,7 @@ fun SettingsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable(enabled = !isCheckingUpdate) {
-                                viewModel.checkForUpdates("0.4.0")
+                                viewModel.checkForUpdates(BuildConfig.VERSION_NAME)
                             }
                             .padding(horizontal = 20.dp, vertical = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,

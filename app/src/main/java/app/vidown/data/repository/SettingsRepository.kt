@@ -46,7 +46,7 @@ class SettingsRepository(private val context: Context) {
 
     val defaultResolutionFlow: Flow<String> = context.dataStore.data
         .map { preferences ->
-            preferences[DEFAULT_RESOLUTION_KEY] ?: "Best Video"
+            preferences[DEFAULT_RESOLUTION_KEY] ?: "Always Best Video"
         }
 
     suspend fun setTheme(theme: AppTheme) {

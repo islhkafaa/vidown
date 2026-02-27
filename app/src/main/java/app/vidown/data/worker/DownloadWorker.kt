@@ -51,15 +51,45 @@ class DownloadWorker(
 
     private fun createForegroundInfo(progress: Int, title: String): ForegroundInfo {
         val notificationId = id.hashCode()
+        val requestIdStr = inputData.getString(KEY_REQUEST_ID) ?: ""
         val cancelIntent = WorkManager.getInstance(applicationContext).createCancelPendingIntent(id)
 
+        val currentStatus = DownloadQueueRepository.getDownload(UUID.fromString(requestIdStr))?.status
+
+        val pauseResumeAction = if (currentStatus == DownloadStatus.Paused) {
+            val resumeIntent = Intent(applicationContext, app.vidown.data.receiver.DownloadControlReceiver::class.java).apply {
+                action = ACTION_RESUME
+                putExtra(KEY_REQUEST_ID, requestIdStr)
+            }
+            val resumePendingIntent = PendingIntent.getBroadcast(
+                applicationContext, id.hashCode() + 2, resumeIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            NotificationCompat.Action.Builder(
+                android.R.drawable.ic_media_play, "Resume", resumePendingIntent
+            ).build()
+        } else {
+            val pauseIntent = Intent(applicationContext, app.vidown.data.receiver.DownloadControlReceiver::class.java).apply {
+                action = ACTION_PAUSE
+                putExtra(KEY_REQUEST_ID, requestIdStr)
+            }
+            val pausePendingIntent = PendingIntent.getBroadcast(
+                applicationContext, id.hashCode() + 2, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            NotificationCompat.Action.Builder(
+                android.R.drawable.ic_media_pause, "Pause", pausePendingIntent
+            ).build()
+        }
+
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setContentTitle(title)
-            .setContentText("Downloading: $progress%")
+            .setContentTitle(if (currentStatus == DownloadStatus.Paused) "Paused" else "Downloading")
+            .setContentText("$title ($progress%)")
+            .setStyle(NotificationCompat.BigTextStyle().bigText("$title\nProgress: $progress%"))
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setOngoing(true)
-            .setProgress(100, progress, false)
+            .setProgress(100, progress, progress < 0)
+            .addAction(pauseResumeAction)
             .addAction(android.R.drawable.ic_delete, "Cancel", cancelIntent)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -108,7 +138,9 @@ class DownloadWorker(
 
             var lastNotificationTime = 0L
 
-            YoutubeDL.getInstance().execute(request, requestIdStr) { progress, etaInSeconds, line ->
+            YoutubeDL.getInstance().execute(request, requestIdStr) { progress, _, line ->
+                if (isStopped) return@execute
+
                 val match = sizeRegex.find(line)
                 if (match != null) {
                     val size = match.groupValues[1].toDoubleOrNull() ?: 0.0
@@ -120,6 +152,11 @@ class DownloadWorker(
                         else -> 1L
                     }
                     totalBytes = (size * multiplier).toLong()
+                }
+
+                val currentDownloadStatus = DownloadQueueRepository.getDownload(requestId)?.status
+                if (currentDownloadStatus == DownloadStatus.Paused) {
+                    return@execute
                 }
 
                 DownloadQueueRepository.updateProgress(
@@ -137,6 +174,10 @@ class DownloadWorker(
                     )
                     lastNotificationTime = currentTime
                 }
+            }
+
+            if (isStopped || DownloadQueueRepository.getDownload(requestId)?.status == DownloadStatus.Paused) {
+                return@withContext Result.retry()
             }
 
             val downloadedFile = downloadDir.listFiles()?.find { it.name.startsWith(safeTitle) }
@@ -186,6 +227,9 @@ class DownloadWorker(
             }
 
         } catch (e: Exception) {
+            if (isStopped || DownloadQueueRepository.getDownload(requestId)?.status == DownloadStatus.Paused) {
+                return@withContext Result.retry()
+            }
             e.printStackTrace()
             DownloadQueueRepository.updateStatus(requestId, DownloadStatus.Failed)
             db.historyDao().insertHistory(
@@ -230,6 +274,13 @@ class DownloadWorker(
         notificationManager.notify(id.hashCode() + 1, notification)
     }
 
+    /*
+    override suspend fun onStopped() {
+        super.onStopped()
+        val requestIdStr = inputData.getString(KEY_REQUEST_ID)
+    }
+    */
+
     private fun showFailureNotification(title: String) {
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setContentTitle("Download Failed")
@@ -249,5 +300,8 @@ class DownloadWorker(
         const val KEY_THUMBNAIL = "key_thumbnail"
         const val KEY_TOTAL_BYTES = "key_total_bytes"
         const val CHANNEL_ID = "vidown_downloads"
+
+        const val ACTION_PAUSE = "app.vidown.action.PAUSE"
+        const val ACTION_RESUME = "app.vidown.action.RESUME"
     }
 }

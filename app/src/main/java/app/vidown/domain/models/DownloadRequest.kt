@@ -3,7 +3,7 @@ package app.vidown.domain.models
 import java.util.UUID
 
 enum class DownloadStatus {
-    Pending, Downloading, Success, Failed
+    Pending, Downloading, Paused, Success, Failed, Cancelled
 }
 
 data class DownloadRequest(

@@ -59,6 +59,15 @@
                 tools:node="remove" />
         </provider>
 
+        <receiver
+            android:name=".data.receiver.DownloadControlReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="app.vidown.action.PAUSE" />
+                <action android:name="app.vidown.action.RESUME" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

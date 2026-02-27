@@ -43,19 +43,23 @@ class YtDlpRepository(private val context: Context) {
         }
     }
 
-    suspend fun fetchVideoInfo(url: String): Result<VideoInfo> = withContext(Dispatchers.IO) {
+    suspend fun fetchVideoInfo(url: String, allowPlaylist: Boolean = false): Result<VideoInfo> = withContext(Dispatchers.IO) {
         try {
             ensureInitialized()
 
             val request = YoutubeDLRequest(url).apply {
                 addOption("--dump-json")
-                addOption("--no-playlist")
+                if (!allowPlaylist) {
+                    addOption("--no-playlist")
+                } else {
+                    addOption("--flat-playlist")
+                }
             }
 
             val response = YoutubeDL.getInstance().execute(request)
             val output = response.out
 
-            val jsonString = output?.lines()?.lastOrNull { it.trim().startsWith("{") }
+            val jsonString = output.lines().lastOrNull { it.trim().startsWith("{") }
 
             if (jsonString.isNullOrBlank()) {
                 return@withContext Result.failure(Exception("Empty response from yt-dlp"))

@@ -1,5 +1,10 @@
 package app.vidown.data.repository
 
+import android.content.Context
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import app.vidown.data.worker.DownloadWorker
 import app.vidown.domain.models.DownloadRequest
 import app.vidown.domain.models.DownloadStatus
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +25,25 @@ object DownloadQueueRepository {
             }
             mutableList
         }
+    }
+
+    fun enqueueDownload(context: Context, request: DownloadRequest) {
+        addDownload(request)
+
+        val inputData = Data.Builder()
+            .putString(DownloadWorker.KEY_URL, request.url)
+            .putString(DownloadWorker.KEY_FORMAT_ID, request.formatId)
+            .putString(DownloadWorker.KEY_REQUEST_ID, request.id.toString())
+            .putString(DownloadWorker.KEY_TITLE, request.title)
+            .putString(DownloadWorker.KEY_THUMBNAIL, request.thumbnailUrl)
+            .putLong(DownloadWorker.KEY_TOTAL_BYTES, request.totalBytes)
+            .build()
+
+        val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
+            .setInputData(inputData)
+            .build()
+
+        WorkManager.getInstance(context).enqueue(workRequest)
     }
 
     fun updateProgress(id: UUID, progress: Float, downloadedBytes: Long, totalBytes: Long) {
@@ -44,6 +68,20 @@ object DownloadQueueRepository {
                     request.copy(status = status)
                 } else request
             }
+        }
+    }
+
+    fun pauseDownload(id: UUID) {
+        updateStatus(id, DownloadStatus.Paused)
+    }
+
+    fun resumeDownload(id: UUID) {
+        updateStatus(id, DownloadStatus.Pending)
+    }
+
+    fun removeDownload(id: UUID) {
+        _downloadQueue.update { currentList ->
+            currentList.filterNot { it.id == id }
         }
     }
 

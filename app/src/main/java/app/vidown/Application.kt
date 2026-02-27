@@ -10,6 +10,7 @@ import androidx.work.WorkManager
 import app.vidown.data.worker.ExtractorUpdateWorker
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
+import app.vidown.data.util.VidownNotificationManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -43,6 +44,7 @@ class Application : Application(), androidx.work.Configuration.Provider {
             }
         }
 
+        VidownNotificationManager.init(this)
         setupPeriodicExtractorUpdate()
     }
 

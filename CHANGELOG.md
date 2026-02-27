@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-02-27
+
+### Added
+- **Download Speed & ETA**: Real-time download speed and estimated time remaining (ETA) are now displayed in both the UI and system notifications.
+- **Improved History Experience**:
+  - Search bar to quickly find downloads by title or uploader.
+  - Auto-retry button on failed downloads.
+- **Interactive Playlists**:
+  - Full support for YouTube playlists and search results.
+  - Clickable playlist entries to fetch specific video details/formats.
+  - Improved "Download All" stability using `dump-single-json`.
+- **Auto-Retry**: Downloads now automatically retry up to 3 times on transient network failures.
+- **Share to Vidown**: Accept URLs shared from other apps directly, opening the download dialog immediately.
+
+### Changed
+- **Concurrent Downloads**: Improved setting to use text input (1-20) instead of a fixed dropdown for more flexibility.
+- Increased application version to `0.5.0` (Version Code `8`).
+
+### Fixed
+- **Better Cancellation**: Optimized cancellation logic to reliably stop tasks and clean up resources immediately.
+- **Playlist Resolution**: Ensured playlist items use the correct webpage URL for reliable extraction.
+- **UI Stability**: Resolved various "Unresolved Reference" lint errors and improved icon consistency across screens.
+
 ## [0.4.2] - 2026-02-26
 
 ### Added

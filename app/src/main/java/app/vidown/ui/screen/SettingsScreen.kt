@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +25,6 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.HighQuality
-import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.PhoneAndroid
@@ -36,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
@@ -305,16 +306,14 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
 
+            var concurrentInput by
+                    remember(concurrentDownloadsState) {
+                      mutableStateOf(concurrentDownloadsState.toString())
+                    }
+
             Row(
                     modifier =
-                            Modifier.fillMaxWidth()
-                                    .clickable {
-                                      val newLimit =
-                                              if (concurrentDownloadsState >= 5) 1
-                                              else concurrentDownloadsState + 1
-                                      viewModel.setConcurrentDownloads(newLimit)
-                                    }
-                                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
             ) {
@@ -327,15 +326,33 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                                 )
                 )
                 Text(
-                        text = "$concurrentDownloadsState simultaneous files",
+                        text = "Simultaneous active files",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
               }
-              Icon(
-                      imageVector = Icons.Rounded.Layers,
-                      contentDescription = "Concurrent Limit",
-                      tint = MaterialTheme.colorScheme.onSurfaceVariant
+
+              OutlinedTextField(
+                      value = concurrentInput,
+                      onValueChange = { newValue ->
+                        if (newValue.length <= 2 && newValue.all { it.isDigit() }) {
+                          concurrentInput = newValue
+                          newValue.toIntOrNull()?.let { limit ->
+                            if (limit in 1..20) {
+                              viewModel.setConcurrentDownloads(limit)
+                            }
+                          }
+                        }
+                      },
+                      modifier = Modifier.width(80.dp),
+                      singleLine = true,
+                      textStyle = MaterialTheme.typography.bodyMedium,
+                      keyboardOptions =
+                              androidx.compose.foundation.text.KeyboardOptions(
+                                      keyboardType =
+                                              androidx.compose.ui.text.input.KeyboardType.Number
+                              ),
+                      shape = RoundedCornerShape(12.dp)
               )
             }
 

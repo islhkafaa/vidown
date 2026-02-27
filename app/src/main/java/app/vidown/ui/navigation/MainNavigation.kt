@@ -25,90 +25,109 @@ import app.vidown.ui.screen.PlayerScreen
 import app.vidown.ui.screen.SettingsScreen
 
 sealed class Screen(val route: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    data object Home : Screen("home", Icons.Rounded.Home)
-    data object History : Screen("history", Icons.Rounded.History)
-    data object Settings : Screen("settings", Icons.Rounded.Settings)
+  data object Home : Screen("home", Icons.Rounded.Home)
+  data object History : Screen("history", Icons.Rounded.History)
+  data object Settings : Screen("settings", Icons.Rounded.Settings)
 }
 
 private const val PLAYER_ROUTE = "player/{encodedUri}"
 
 @Composable
-fun MainNavigation() {
-    val navController = rememberNavController()
-    val items = listOf(Screen.Home, Screen.History, Screen.Settings)
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-    val isPlayerActive = currentRoute?.startsWith("player") == true
+fun MainNavigation(initialUrl: String? = null) {
+  val navController = rememberNavController()
+  val items = listOf(Screen.Home, Screen.History, Screen.Settings)
+  val navBackStackEntry by navController.currentBackStackEntryAsState()
+  val currentRoute = navBackStackEntry?.destination?.route
+  val isPlayerActive = currentRoute?.startsWith("player") == true
 
-    Scaffold(
-        bottomBar = {
+  Scaffold(
+          bottomBar = {
             if (!isPlayerActive) {
-                NavigationBar {
-                    items.forEach { screen ->
-                        NavigationBarItem(
-                            icon = { Icon(screen.icon, contentDescription = null) },
-                            label = null,
-                            selected = currentRoute == screen.route,
-                            onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+              NavigationBar {
+                items.forEach { screen ->
+                  NavigationBarItem(
+                          icon = { Icon(screen.icon, contentDescription = null) },
+                          label = null,
+                          selected = currentRoute == screen.route,
+                          onClick = {
+                            navController.navigate(screen.route) {
+                              popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                              }
+                              launchSingleTop = true
+                              restoreState = true
                             }
-                        )
-                    }
+                          }
+                  )
                 }
+              }
             }
-        }
-    ) { innerPadding ->
-        NavHost(
+          }
+  ) { innerPadding ->
+    NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination =
+                    if (initialUrl != null) "${Screen.Home.route}?url=$initialUrl"
+                    else Screen.Home.route,
             modifier = if (isPlayerActive) Modifier else Modifier.padding(innerPadding)
-        ) {
-            composable(Screen.Home.route) { HomeScreen() }
-            composable(Screen.History.route) {
-                HistoryScreen(
-                    onPlayEvent = { encodedUri ->
-                        navController.navigate("player/$encodedUri")
-                    }
-                )
-            }
-            composable(Screen.Settings.route) { SettingsScreen() }
-            composable(
-                route = PLAYER_ROUTE,
-                arguments = listOf(navArgument("encodedUri") { type = NavType.StringType }),
-                enterTransition = {
-                    androidx.compose.animation.slideInVertically(
+    ) {
+      composable(
+              route = "${Screen.Home.route}?url={url}",
+              arguments =
+                      listOf(
+                              navArgument("url") {
+                                type = NavType.StringType
+                                nullable = true
+                                defaultValue = null
+                              }
+                      )
+      ) { backStackEntry ->
+        val url = backStackEntry.arguments?.getString("url")
+        HomeScreen(initialSearchUrl = url)
+      }
+      composable(Screen.History.route) {
+        HistoryScreen(onPlayEvent = { encodedUri -> navController.navigate("player/$encodedUri") })
+      }
+      composable(Screen.Settings.route) { SettingsScreen() }
+      composable(
+              route = PLAYER_ROUTE,
+              arguments = listOf(navArgument("encodedUri") { type = NavType.StringType }),
+              enterTransition = {
+                androidx.compose.animation.slideInVertically(
                         initialOffsetY = { it },
                         animationSpec = androidx.compose.animation.core.tween(400)
-                    ) + androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(400))
-                },
-                exitTransition = {
-                    androidx.compose.animation.slideOutVertically(
+                ) +
+                        androidx.compose.animation.fadeIn(
+                                animationSpec = androidx.compose.animation.core.tween(400)
+                        )
+              },
+              exitTransition = {
+                androidx.compose.animation.slideOutVertically(
                         targetOffsetY = { it },
                         animationSpec = androidx.compose.animation.core.tween(400)
-                    ) + androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(400))
-                },
-                popEnterTransition = {
-                    androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(400))
-                },
-                popExitTransition = {
-                    androidx.compose.animation.slideOutVertically(
-                        targetOffsetY = { it },
+                ) +
+                        androidx.compose.animation.fadeOut(
+                                animationSpec = androidx.compose.animation.core.tween(400)
+                        )
+              },
+              popEnterTransition = {
+                androidx.compose.animation.fadeIn(
                         animationSpec = androidx.compose.animation.core.tween(400)
-                    ) + androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(400))
-                }
-            ) { backStackEntry ->
-                val encodedUri = backStackEntry.arguments?.getString("encodedUri") ?: ""
-                PlayerScreen(
-                    encodedUri = encodedUri,
-                    onBack = { navController.popBackStack() }
                 )
-            }
-        }
+              },
+              popExitTransition = {
+                androidx.compose.animation.slideOutVertically(
+                        targetOffsetY = { it },
+                        animationSpec = androidx.compose.animation.core.tween(400)
+                ) +
+                        androidx.compose.animation.fadeOut(
+                                animationSpec = androidx.compose.animation.core.tween(400)
+                        )
+              }
+      ) { backStackEntry ->
+        val encodedUri = backStackEntry.arguments?.getString("encodedUri") ?: ""
+        PlayerScreen(encodedUri = encodedUri, onBack = { navController.popBackStack() })
+      }
     }
+  }
 }

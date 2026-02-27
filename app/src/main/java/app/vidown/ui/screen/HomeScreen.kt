@@ -51,8 +51,14 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
         modifier: Modifier = Modifier,
         homeViewModel: HomeViewModel = viewModel(),
-        queueViewModel: QueueViewModel = viewModel()
+        queueViewModel: QueueViewModel = viewModel(),
+        initialSearchUrl: String? = null
 ) {
+  LaunchedEffect(initialSearchUrl) {
+    if (initialSearchUrl != null) {
+      homeViewModel.fetchVideoInfo(initialSearchUrl)
+    }
+  }
   val uiState by homeViewModel.uiState.collectAsState()
   val queue by queueViewModel.downloadQueue.collectAsState()
   val keyboardController = LocalSoftwareKeyboardController.current
@@ -319,6 +325,10 @@ fun HomeScreen(
                       urlInput = ""
                       homeViewModel.resetState()
                     },
+                    onEntryClick = { entry ->
+                      urlInput = entry.displayUrl
+                      homeViewModel.fetchVideoInfo(entry.displayUrl)
+                    },
                     homeViewModel = homeViewModel
             )
           }
@@ -391,6 +401,7 @@ fun VideoDetailsContent(
         videoInfo: VideoInfo,
         onDownload: (Format) -> Unit,
         onDownloadPlaylist: () -> Unit,
+        onEntryClick: (VideoInfo) -> Unit,
         homeViewModel: app.vidown.ui.viewmodel.HomeViewModel
 ) {
   var defaultResolution by remember { mutableStateOf("Always Best Video") }
@@ -422,7 +433,9 @@ fun VideoDetailsContent(
           }
         }
       }
-      items(videoInfo.entries) { entry -> PlaylistEntryItem(entry = entry) }
+      items(videoInfo.entries) { entry ->
+        PlaylistEntryItem(entry = entry, onClick = { onEntryClick(entry) })
+      }
     } else {
       item {
         if (defaultResolution == "Always Ask") {
@@ -549,9 +562,9 @@ fun VideoDetailsContent(
 }
 
 @Composable
-fun PlaylistEntryItem(entry: VideoInfo) {
+fun PlaylistEntryItem(entry: VideoInfo, onClick: () -> Unit) {
   Card(
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.fillMaxWidth().clickable { onClick() },
           shape = RoundedCornerShape(16.dp),
           colors =
                   CardDefaults.cardColors(
@@ -792,6 +805,7 @@ fun DownloadQueueSheetContent(queue: List<DownloadRequest>) {
 
 @Composable
 fun DownloadItemCard(request: DownloadRequest, modifier: Modifier = Modifier) {
+  val context = androidx.compose.ui.platform.LocalContext.current
   val statusColor =
           when (request.status) {
             DownloadStatus.Success -> MaterialTheme.colorScheme.primary
@@ -904,6 +918,38 @@ fun DownloadItemCard(request: DownloadRequest, modifier: Modifier = Modifier) {
                         trackColor = statusColor.copy(alpha = 0.2f)
                 )
               }
+
+              if (request.status == DownloadStatus.Downloading &&
+                              (request.speed != null || request.eta != null)
+              ) {
+                Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                  request.speed?.let {
+                    Text(
+                            text = it,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                  }
+                  if (request.speed != null && request.eta != null) {
+                    Text(
+                            text = "•",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                  }
+                  request.eta?.let {
+                    Text(
+                            text = "$it remaining",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                  }
+                }
+              }
             }
           }
         }
@@ -934,7 +980,7 @@ fun DownloadItemCard(request: DownloadRequest, modifier: Modifier = Modifier) {
                               if (request.status == DownloadStatus.Paused) "Resume" else "Pause",
               )
             }
-            IconButton(onClick = { DownloadQueueRepository.removeDownload(request.id) }) {
+            IconButton(onClick = { DownloadQueueRepository.removeDownload(context, request.id) }) {
               Icon(
                       imageVector = Icons.Rounded.Close,
                       contentDescription = "Cancel/Remove",

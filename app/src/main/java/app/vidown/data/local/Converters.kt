@@ -13,7 +13,7 @@ class Converters {
     fun toDownloadStatus(name: String): DownloadStatus {
         return try {
             DownloadStatus.valueOf(name)
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             DownloadStatus.Failed
         }
     }

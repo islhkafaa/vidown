@@ -13,85 +13,84 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 class YtDlpRepository(private val context: Context) {
-  private val json = Json {
-    ignoreUnknownKeys = true
-    coerceInputValues = true
-    isLenient = true
-  }
-
-  companion object {
-    private val initMutex = Mutex()
-    private var isInitialized = false
-  }
-
-  private suspend fun ensureInitialized() {
-    if (!isInitialized) {
-      initMutex.withLock {
-        if (!isInitialized) {
-          try {
-            withContext(Dispatchers.IO) {
-              YoutubeDL.getInstance().init(context)
-              FFmpeg.getInstance().init(context)
-              isInitialized = true
-            }
-          } catch (e: Exception) {
-            Log.e("YtDlpRepository", "Initialization failed", e)
-            throw e
-          }
-        }
-      }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+        isLenient = true
     }
-  }
 
-  suspend fun fetchVideoInfo(url: String, allowPlaylist: Boolean = false): Result<VideoInfo> =
-          withContext(Dispatchers.IO) {
+    companion object {
+        private val initMutex = Mutex()
+        private var isInitialized = false
+    }
+
+    private suspend fun ensureInitialized() {
+        if (!isInitialized) {
+            initMutex.withLock {
+                if (!isInitialized) {
+                    try {
+                        withContext(Dispatchers.IO) {
+                            YoutubeDL.getInstance().init(context)
+                            FFmpeg.getInstance().init(context)
+                            isInitialized = true
+                        }
+                    } catch (e: Exception) {
+                        Log.e("YtDlpRepository", "Initialization failed", e)
+                        throw e
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun fetchVideoInfo(url: String, allowPlaylist: Boolean = false): Result<VideoInfo> =
+        withContext(Dispatchers.IO) {
             try {
-              ensureInitialized()
+                ensureInitialized()
 
-              val request =
-                      YoutubeDLRequest(url).apply {
+                val request =
+                    YoutubeDLRequest(url).apply {
                         addOption("--dump-single-json")
                         if (!allowPlaylist) {
-                          addOption("--no-playlist")
+                            addOption("--no-playlist")
                         } else {
-                          addOption("--flat-playlist")
+                            addOption("--flat-playlist")
                         }
-                      }
+                    }
 
-              val response = YoutubeDL.getInstance().execute(request)
-              val output = response.out
+                val response = YoutubeDL.getInstance().execute(request)
+                val output = response.out
 
-              // Find the JSON object in the output more robustly
-              val jsonPart =
-                      output.substringAfter("{", "").let {
+                val jsonPart =
+                    output.substringAfter("{", "").let {
                         if (it.isNotEmpty()) "{" + it.substringBeforeLast("}") + "}" else ""
-                      }
+                    }
 
-              if (jsonPart.isBlank()) {
-                return@withContext Result.failure(
+                if (jsonPart.isBlank()) {
+                    return@withContext Result.failure(
                         Exception("Could not find valid JSON in yt-dlp response")
-                )
-              }
+                    )
+                }
 
-              val videoInfo = json.decodeFromString<VideoInfo>(jsonPart)
-              Result.success(videoInfo)
+                val videoInfo = json.decodeFromString<VideoInfo>(jsonPart)
+                Result.success(videoInfo)
             } catch (e: Exception) {
-              Log.e("YtDlpRepository", "Error fetching video info", e)
-              Result.failure(e)
+                Log.e("YtDlpRepository", "Error fetching video info", e)
+                Result.failure(e)
             }
-          }
+        }
 
-  suspend fun updateYtDlp(): Result<YoutubeDL.UpdateStatus> =
-          withContext(Dispatchers.IO) {
+    suspend fun updateYtDlp(): Result<YoutubeDL.UpdateStatus> =
+        withContext(Dispatchers.IO) {
             try {
-              ensureInitialized()
-              val status =
-                      YoutubeDL.getInstance()
-                              .updateYoutubeDL(context, YoutubeDL.UpdateChannel._STABLE)
-              Result.success(status ?: YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE)
+                ensureInitialized()
+                val status =
+                    YoutubeDL.getInstance()
+                        .updateYoutubeDL(context, YoutubeDL.UpdateChannel._STABLE)
+                Result.success(status ?: YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE)
             } catch (e: Exception) {
-              Log.e("YtDlpRepository", "Error updating yt-dlp", e)
-              Result.failure(e)
+                Log.e("YtDlpRepository", "Error updating yt-dlp", e)
+                Result.failure(e)
             }
-          }
+        }
 }

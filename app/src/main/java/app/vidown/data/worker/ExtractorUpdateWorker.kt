@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import app.vidown.data.repository.YtDlpRepository
-import com.yausername.youtubedl_android.YoutubeDL
 
 class ExtractorUpdateWorker(
     appContext: Context,
@@ -23,7 +22,10 @@ class ExtractorUpdateWorker(
                 Log.d("ExtractorUpdateWorker", "Update finished with status: $status")
                 Result.success()
             } else {
-                Log.e("ExtractorUpdateWorker", "Update failed: ${result.exceptionOrNull()?.message}")
+                Log.e(
+                    "ExtractorUpdateWorker",
+                    "Update failed: ${result.exceptionOrNull()?.message}"
+                )
                 Result.retry()
             }
         } catch (e: Exception) {

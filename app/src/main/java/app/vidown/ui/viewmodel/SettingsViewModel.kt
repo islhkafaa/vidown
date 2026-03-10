@@ -44,7 +44,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val updateManager = app.vidown.domain.manager.UpdateManager(application)
 
-    private val _updateState = kotlinx.coroutines.flow.MutableStateFlow<app.vidown.domain.manager.UpdateResult?>(null)
+    private val _updateState =
+        kotlinx.coroutines.flow.MutableStateFlow<app.vidown.domain.manager.UpdateResult?>(null)
     val updateState: StateFlow<app.vidown.domain.manager.UpdateResult?> = _updateState
 
     private val _isCheckingUpdate = kotlinx.coroutines.flow.MutableStateFlow(false)
@@ -57,8 +58,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _isUpdatingExtractors = kotlinx.coroutines.flow.MutableStateFlow(false)
     val isUpdatingExtractors: StateFlow<Boolean> = _isUpdatingExtractors
 
-    private val _extractorUpdateResult = kotlinx.coroutines.flow.MutableStateFlow<Result<com.yausername.youtubedl_android.YoutubeDL.UpdateStatus>?>(null)
-    val extractorUpdateResult: StateFlow<Result<com.yausername.youtubedl_android.YoutubeDL.UpdateStatus>?> = _extractorUpdateResult
+    private val _extractorUpdateResult =
+        kotlinx.coroutines.flow.MutableStateFlow<Result<com.yausername.youtubedl_android.YoutubeDL.UpdateStatus>?>(
+            null
+        )
 
     fun setTheme(theme: AppTheme) {
         viewModelScope.launch {
@@ -97,7 +100,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             val result = updateManager.downloadAndInstallUpdate(url, filename)
             if (result) {
-                 _updateState.value = null
+                _updateState.value = null
             }
         }
     }
@@ -113,9 +116,5 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _extractorUpdateResult.value = result
             _isUpdatingExtractors.value = false
         }
-    }
-
-    fun resetExtractorUpdateResult() {
-        _extractorUpdateResult.value = null
     }
 }

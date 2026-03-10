@@ -13,31 +13,60 @@ private val provider = GoogleFont.Provider(
     certificates = R.array.com_google_android_gms_fonts_certs,
 )
 
+private val OutfitFont = GoogleFont("Outfit")
+
+private val OutfitFamily = FontFamily(
+    Font(googleFont = OutfitFont, fontProvider = provider, weight = FontWeight.Normal),
+    Font(googleFont = OutfitFont, fontProvider = provider, weight = FontWeight.Medium),
+    Font(googleFont = OutfitFont, fontProvider = provider, weight = FontWeight.SemiBold),
+    Font(googleFont = OutfitFont, fontProvider = provider, weight = FontWeight.Bold),
+)
+
 private val InterFont = GoogleFont("Inter")
 
 private val InterFamily = FontFamily(
     Font(googleFont = InterFont, fontProvider = provider, weight = FontWeight.Normal),
     Font(googleFont = InterFont, fontProvider = provider, weight = FontWeight.Medium),
     Font(googleFont = InterFont, fontProvider = provider, weight = FontWeight.SemiBold),
-    Font(googleFont = InterFont, fontProvider = provider, weight = FontWeight.Bold),
 )
 
 private val Default = Typography()
 
 val VidownTypography = Typography(
-    displayLarge = Default.displayLarge.copy(fontFamily = InterFamily),
-    displayMedium = Default.displayMedium.copy(fontFamily = InterFamily),
-    displaySmall = Default.displaySmall.copy(fontFamily = InterFamily),
-    headlineLarge = Default.headlineLarge.copy(fontFamily = InterFamily),
-    headlineMedium = Default.headlineMedium.copy(fontFamily = InterFamily),
-    headlineSmall = Default.headlineSmall.copy(fontFamily = InterFamily),
-    titleLarge = Default.titleLarge.copy(fontFamily = InterFamily),
-    titleMedium = Default.titleMedium.copy(fontFamily = InterFamily),
-    titleSmall = Default.titleSmall.copy(fontFamily = InterFamily),
+    displayLarge = Default.displayLarge.copy(
+        fontFamily = OutfitFamily,
+        fontWeight = FontWeight.Bold
+    ),
+    displayMedium = Default.displayMedium.copy(
+        fontFamily = OutfitFamily,
+        fontWeight = FontWeight.Bold
+    ),
+    displaySmall = Default.displaySmall.copy(
+        fontFamily = OutfitFamily,
+        fontWeight = FontWeight.Bold
+    ),
+    headlineLarge = Default.headlineLarge.copy(
+        fontFamily = OutfitFamily,
+        fontWeight = FontWeight.SemiBold
+    ),
+    headlineMedium = Default.headlineMedium.copy(
+        fontFamily = OutfitFamily,
+        fontWeight = FontWeight.SemiBold
+    ),
+    headlineSmall = Default.headlineSmall.copy(
+        fontFamily = OutfitFamily,
+        fontWeight = FontWeight.SemiBold
+    ),
+    titleLarge = Default.titleLarge.copy(fontFamily = OutfitFamily, fontWeight = FontWeight.Medium),
+    titleMedium = Default.titleMedium.copy(
+        fontFamily = InterFamily,
+        fontWeight = FontWeight.Medium
+    ),
+    titleSmall = Default.titleSmall.copy(fontFamily = InterFamily, fontWeight = FontWeight.Medium),
     bodyLarge = Default.bodyLarge.copy(fontFamily = InterFamily),
     bodyMedium = Default.bodyMedium.copy(fontFamily = InterFamily),
     bodySmall = Default.bodySmall.copy(fontFamily = InterFamily),
-    labelLarge = Default.labelLarge.copy(fontFamily = InterFamily),
+    labelLarge = Default.labelLarge.copy(fontFamily = InterFamily, fontWeight = FontWeight.Medium),
     labelMedium = Default.labelMedium.copy(fontFamily = InterFamily),
     labelSmall = Default.labelSmall.copy(fontFamily = InterFamily),
 )

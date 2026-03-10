@@ -14,89 +14,89 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 object DownloadQueueRepository {
-  private val _downloadQueue = MutableStateFlow<List<DownloadRequest>>(emptyList())
-  val downloadQueue: StateFlow<List<DownloadRequest>> = _downloadQueue.asStateFlow()
+    private val _downloadQueue = MutableStateFlow<List<DownloadRequest>>(emptyList())
+    val downloadQueue: StateFlow<List<DownloadRequest>> = _downloadQueue.asStateFlow()
 
-  fun addDownload(request: DownloadRequest) {
-    _downloadQueue.update { currentList ->
-      val mutableList = currentList.toMutableList()
-      if (mutableList.none { it.id == request.id }) {
-        mutableList.add(request)
-      }
-      mutableList
+    fun addDownload(request: DownloadRequest) {
+        _downloadQueue.update { currentList ->
+            val mutableList = currentList.toMutableList()
+            if (mutableList.none { it.id == request.id }) {
+                mutableList.add(request)
+            }
+            mutableList
+        }
     }
-  }
 
-  fun enqueueDownload(context: Context, request: DownloadRequest) {
-    addDownload(request)
+    fun enqueueDownload(context: Context, request: DownloadRequest) {
+        addDownload(request)
 
-    val inputData =
+        val inputData =
             Data.Builder()
-                    .putString(DownloadWorker.KEY_URL, request.url)
-                    .putString(DownloadWorker.KEY_FORMAT_ID, request.formatId)
-                    .putString(DownloadWorker.KEY_REQUEST_ID, request.id.toString())
-                    .putString(DownloadWorker.KEY_TITLE, request.title)
-                    .putString(DownloadWorker.KEY_THUMBNAIL, request.thumbnailUrl)
-                    .putLong(DownloadWorker.KEY_TOTAL_BYTES, request.totalBytes)
-                    .build()
+                .putString(DownloadWorker.KEY_URL, request.url)
+                .putString(DownloadWorker.KEY_FORMAT_ID, request.formatId)
+                .putString(DownloadWorker.KEY_REQUEST_ID, request.id.toString())
+                .putString(DownloadWorker.KEY_TITLE, request.title)
+                .putString(DownloadWorker.KEY_THUMBNAIL, request.thumbnailUrl)
+                .putLong(DownloadWorker.KEY_TOTAL_BYTES, request.totalBytes)
+                .build()
 
-    val workRequest =
+        val workRequest =
             OneTimeWorkRequestBuilder<DownloadWorker>()
-                    .setInputData(inputData)
-                    .addTag(request.id.toString())
-                    .build()
+                .setInputData(inputData)
+                .addTag(request.id.toString())
+                .build()
 
-    WorkManager.getInstance(context).enqueue(workRequest)
-  }
-
-  fun updateProgress(
-          id: UUID,
-          progress: Float,
-          downloadedBytes: Long,
-          totalBytes: Long,
-          speed: String? = null,
-          eta: String? = null
-  ) {
-    _downloadQueue.update { currentList ->
-      currentList.map { request ->
-        if (request.id == id) {
-          request.copy(
-                  progress = progress,
-                  downloadedBytes = downloadedBytes,
-                  totalBytes = totalBytes,
-                  speed = speed,
-                  eta = eta,
-                  status = DownloadStatus.Downloading
-          )
-        } else request
-      }
+        WorkManager.getInstance(context).enqueue(workRequest)
     }
-  }
 
-  fun updateStatus(id: UUID, status: DownloadStatus) {
-    _downloadQueue.update { currentList ->
-      currentList.map { request ->
-        if (request.id == id) {
-          request.copy(status = status)
-        } else request
-      }
+    fun updateProgress(
+        id: UUID,
+        progress: Float,
+        downloadedBytes: Long,
+        totalBytes: Long,
+        speed: String? = null,
+        eta: String? = null
+    ) {
+        _downloadQueue.update { currentList ->
+            currentList.map { request ->
+                if (request.id == id) {
+                    request.copy(
+                        progress = progress,
+                        downloadedBytes = downloadedBytes,
+                        totalBytes = totalBytes,
+                        speed = speed,
+                        eta = eta,
+                        status = DownloadStatus.Downloading
+                    )
+                } else request
+            }
+        }
     }
-  }
 
-  fun pauseDownload(id: UUID) {
-    updateStatus(id, DownloadStatus.Paused)
-  }
+    fun updateStatus(id: UUID, status: DownloadStatus) {
+        _downloadQueue.update { currentList ->
+            currentList.map { request ->
+                if (request.id == id) {
+                    request.copy(status = status)
+                } else request
+            }
+        }
+    }
 
-  fun resumeDownload(id: UUID) {
-    updateStatus(id, DownloadStatus.Pending)
-  }
+    fun pauseDownload(id: UUID) {
+        updateStatus(id, DownloadStatus.Paused)
+    }
 
-  fun removeDownload(context: Context, id: UUID) {
-    _downloadQueue.update { currentList -> currentList.filterNot { it.id == id } }
-    WorkManager.getInstance(context).cancelAllWorkByTag(id.toString())
-  }
+    fun resumeDownload(id: UUID) {
+        updateStatus(id, DownloadStatus.Pending)
+    }
 
-  fun getDownload(id: UUID): DownloadRequest? {
-    return _downloadQueue.value.find { it.id == id }
-  }
+    fun removeDownload(context: Context, id: UUID) {
+        _downloadQueue.update { currentList -> currentList.filterNot { it.id == id } }
+        WorkManager.getInstance(context).cancelAllWorkByTag(id.toString())
+    }
+
+    fun getDownload(id: UUID): DownloadRequest? {
+        return _downloadQueue.value.find { it.id == id }
+    }
 }

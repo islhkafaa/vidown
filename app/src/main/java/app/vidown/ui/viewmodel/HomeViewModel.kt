@@ -17,80 +17,80 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 sealed class HomeUiState {
-  data object Idle : HomeUiState()
-  data object Loading : HomeUiState()
-  data class Success(val videoInfo: VideoInfo) : HomeUiState()
-  data class Error(val message: String) : HomeUiState()
+    data object Idle : HomeUiState()
+    data object Loading : HomeUiState()
+    data class Success(val videoInfo: VideoInfo) : HomeUiState()
+    data class Error(val message: String) : HomeUiState()
 }
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
-  private val repository = YtDlpRepository(application.applicationContext)
-  private val settingsRepository = SettingsRepository(application.applicationContext)
+    private val repository = YtDlpRepository(application.applicationContext)
+    private val settingsRepository = SettingsRepository(application.applicationContext)
 
-  private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Idle)
-  val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Idle)
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-  fun fetchVideoInfo(url: String) {
-    if (url.isBlank()) return
+    fun fetchVideoInfo(url: String) {
+        if (url.isBlank()) return
 
-    viewModelScope.launch {
-      _uiState.value = HomeUiState.Loading
+        viewModelScope.launch {
+            _uiState.value = HomeUiState.Loading
 
-      repository
-              .fetchVideoInfo(url, allowPlaylist = true)
-              .onSuccess { info -> _uiState.value = HomeUiState.Success(info) }
-              .onFailure { error ->
-                _uiState.value =
+            repository
+                .fetchVideoInfo(url, allowPlaylist = true)
+                .onSuccess { info -> _uiState.value = HomeUiState.Success(info) }
+                .onFailure { error ->
+                    _uiState.value =
                         HomeUiState.Error(error.localizedMessage ?: "Unknown error occurred")
-              }
+                }
+        }
     }
-  }
 
-  suspend fun getDefaultResolution(): String {
-    return settingsRepository.defaultResolutionFlow.first()
-  }
+    suspend fun getDefaultResolution(): String {
+        return settingsRepository.defaultResolutionFlow.first()
+    }
 
-  fun startDownload(videoInfo: VideoInfo, format: Format) {
-    val downloadFormatId =
+    fun startDownload(videoInfo: VideoInfo, format: Format) {
+        val downloadFormatId =
             if (format.isVideo && format.acodec == "none") {
-              "${format.formatId}+bestaudio"
+                "${format.formatId}+bestaudio"
             } else {
-              format.formatId
+                format.formatId
             }
 
-    val request =
+        val request =
             DownloadRequest(
-                    url = videoInfo.displayUrl,
-                    title = videoInfo.title,
-                    thumbnailUrl = videoInfo.thumbnailUrl,
-                    formatId = downloadFormatId,
-                    totalBytes = format.displaySize
+                url = videoInfo.displayUrl,
+                title = videoInfo.title,
+                thumbnailUrl = videoInfo.thumbnailUrl,
+                formatId = downloadFormatId,
+                totalBytes = format.displaySize
             )
 
-    DownloadQueueRepository.enqueueDownload(
+        DownloadQueueRepository.enqueueDownload(
             getApplication<Application>().applicationContext,
             request
-    )
-  }
-
-  fun downloadPlaylist(playlistInfo: VideoInfo) {
-    val entries = playlistInfo.entries ?: return
-    val context = getApplication<Application>().applicationContext
-    entries.forEach { entry ->
-      val request =
-              DownloadRequest(
-                      id = UUID.randomUUID(),
-                      url = entry.displayUrl,
-                      title = entry.title,
-                      thumbnailUrl = entry.thumbnailUrl,
-                      formatId = "best",
-                      totalBytes = 0L
-              )
-      DownloadQueueRepository.enqueueDownload(context, request)
+        )
     }
-  }
 
-  fun resetState() {
-    _uiState.value = HomeUiState.Idle
-  }
+    fun downloadPlaylist(playlistInfo: VideoInfo) {
+        val entries = playlistInfo.entries ?: return
+        val context = getApplication<Application>().applicationContext
+        entries.forEach { entry ->
+            val request =
+                DownloadRequest(
+                    id = UUID.randomUUID(),
+                    url = entry.displayUrl,
+                    title = entry.title,
+                    thumbnailUrl = entry.thumbnailUrl,
+                    formatId = "best",
+                    totalBytes = 0L
+                )
+            DownloadQueueRepository.enqueueDownload(context, request)
+        }
+    }
+
+    fun resetState() {
+        _uiState.value = HomeUiState.Idle
+    }
 }

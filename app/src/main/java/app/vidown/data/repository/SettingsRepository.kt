@@ -20,7 +20,8 @@ class SettingsRepository(private val context: Context) {
     companion object {
         val THEME_KEY = stringPreferencesKey("app_theme")
         val DOWNLOAD_URI_KEY = stringPreferencesKey("download_uri")
-        val CONCURRENT_DOWNLOADS_KEY = androidx.datastore.preferences.core.intPreferencesKey("concurrent_downloads")
+        val CONCURRENT_DOWNLOADS_KEY =
+            androidx.datastore.preferences.core.intPreferencesKey("concurrent_downloads")
         val DEFAULT_RESOLUTION_KEY = stringPreferencesKey("default_resolution")
     }
 
@@ -29,7 +30,7 @@ class SettingsRepository(private val context: Context) {
             val themeName = preferences[THEME_KEY] ?: AppTheme.SYSTEM.name
             try {
                 AppTheme.valueOf(themeName)
-            } catch (e: IllegalArgumentException) {
+            } catch (_: IllegalArgumentException) {
                 AppTheme.SYSTEM
             }
         }

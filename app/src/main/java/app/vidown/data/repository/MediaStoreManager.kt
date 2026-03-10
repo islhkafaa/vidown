@@ -8,14 +8,22 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
+import androidx.core.net.toUri
 
 object MediaStoreManager {
-    fun saveFile(context: Context, tempFile: File, title: String, mimeType: String, isVideo: Boolean, customDirUri: String? = null): String? {
+    fun saveFile(
+        context: Context,
+        tempFile: File,
+        title: String,
+        mimeType: String,
+        isVideo: Boolean,
+        customDirUri: String? = null
+    ): String? {
         val resolver = context.contentResolver
 
         if (!customDirUri.isNullOrEmpty()) {
             try {
-                val directoryUri = Uri.parse(customDirUri)
+                val directoryUri = customDirUri.toUri()
                 val documentFile = DocumentFile.fromTreeUri(context, directoryUri)
                 if (documentFile != null && documentFile.canWrite()) {
                     val fullFileName = "${title}.${tempFile.extension}"
@@ -65,10 +73,16 @@ object MediaStoreManager {
                 put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             } else {
-                val directory = if (isVideo) Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES) else Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+                val directory =
+                    if (isVideo) Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES) else Environment.getExternalStoragePublicDirectory(
+                        Environment.DIRECTORY_MUSIC
+                    )
                 val vidownDir = File(directory, "Vidown")
                 if (!vidownDir.exists()) vidownDir.mkdirs()
-                put(MediaStore.MediaColumns.DATA, File(vidownDir, "${title}.${tempFile.extension}").absolutePath)
+                put(
+                    MediaStore.MediaColumns.DATA,
+                    File(vidownDir, "${title}.${tempFile.extension}").absolutePath
+                )
             }
         }
 
@@ -98,9 +112,10 @@ object MediaStoreManager {
             return null
         }
     }
+
     fun deleteFile(context: Context, uriString: String): Boolean {
         return try {
-            val uri = Uri.parse(uriString)
+            val uri = uriString.toUri()
             val deletedRows = context.contentResolver.delete(uri, null, null)
             deletedRows > 0
         } catch (e: Exception) {

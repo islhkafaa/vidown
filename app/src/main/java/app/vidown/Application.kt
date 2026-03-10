@@ -26,8 +26,7 @@ class Application : Application(), androidx.work.Configuration.Provider {
             val limit = runBlocking { settingsRepo.concurrentDownloadsFlow.firstOrNull() ?: 3 }
 
             return androidx.work.Configuration.Builder()
-                .setExecutor(Executors.newFixedThreadPool(limit))
-                .setMinimumLoggingLevel(Log.INFO)
+                .setExecutor(Executors.newFixedThreadPool(limit)).setMinimumLoggingLevel(Log.INFO)
                 .build()
         }
 
@@ -49,21 +48,15 @@ class Application : Application(), androidx.work.Configuration.Provider {
     }
 
     private fun setupPeriodicExtractorUpdate() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
+        val constraints =
+            Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
         val updateRequest = PeriodicWorkRequestBuilder<ExtractorUpdateWorker>(
-            repeatInterval = 3,
-            repeatIntervalTimeUnit = java.util.concurrent.TimeUnit.DAYS
-        )
-            .setConstraints(constraints)
-            .build()
+            repeatInterval = 3, repeatIntervalTimeUnit = java.util.concurrent.TimeUnit.DAYS
+        ).setConstraints(constraints).build()
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "PeriodicExtractorUpdate",
-            ExistingPeriodicWorkPolicy.KEEP,
-            updateRequest
+            "PeriodicExtractorUpdate", ExistingPeriodicWorkPolicy.KEEP, updateRequest
         )
     }
 }

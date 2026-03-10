@@ -16,6 +16,7 @@ class DownloadControlReceiver : BroadcastReceiver() {
             DownloadWorker.ACTION_PAUSE -> {
                 DownloadQueueRepository.pauseDownload(requestId)
             }
+
             DownloadWorker.ACTION_RESUME -> {
                 DownloadQueueRepository.resumeDownload(requestId)
             }

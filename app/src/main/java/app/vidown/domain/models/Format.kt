@@ -23,9 +23,6 @@ data class Format(
     val isVideo: Boolean
         get() = vcodec != "none"
 
-    val isAudioOnly: Boolean
-        get() = vcodec == "none"
-
     val displaySize: Long
         get() = filesize ?: filesizeApprox ?: 0L
 }

@@ -33,116 +33,121 @@ import app.vidown.ui.theme.VidownTheme
 import app.vidown.ui.viewmodel.SettingsViewModel
 
 class MainActivity : ComponentActivity() {
-  override fun onCreate(savedInstanceState: Bundle?) {
-    val splashScreen = installSplashScreen()
-    super.onCreate(savedInstanceState)
-    enableEdgeToEdge()
-    setContent {
-      val settingsViewModel: SettingsViewModel = viewModel()
-      val appTheme by settingsViewModel.themeState.collectAsState()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            val appTheme by settingsViewModel.themeState.collectAsState()
 
-      val isDarkTheme =
-              when (appTheme) {
-                AppTheme.LIGHT -> false
-                AppTheme.DARK -> true
-                AppTheme.SYSTEM -> isSystemInDarkTheme()
-              }
+            val isDarkTheme =
+                when (appTheme) {
+                    AppTheme.LIGHT -> false
+                    AppTheme.DARK -> true
+                    AppTheme.SYSTEM -> isSystemInDarkTheme()
+                }
 
-      VidownTheme(darkTheme = isDarkTheme) {
-        var showStartupUpdateDialog by remember { mutableStateOf(false) }
-        var sharedUrl by remember { mutableStateOf<String?>(null) }
+            VidownTheme(darkTheme = isDarkTheme) {
+                var showStartupUpdateDialog by remember { mutableStateOf(false) }
+                var sharedUrl by remember { mutableStateOf<String?>(null) }
 
-        LaunchedEffect(Unit) {
-          val intent = this@MainActivity.intent
-          if (intent?.action == android.content.Intent.ACTION_SEND && intent.type == "text/plain") {
-            intent.getStringExtra(android.content.Intent.EXTRA_TEXT)?.let { sharedUrl = it }
-          }
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-          val notificationPermissionLauncher =
-                  rememberLauncherForActivityResult(
-                          contract = ActivityResultContracts.RequestPermission()
-                  ) {}
-
-          LaunchedEffect(Unit) {
-            val granted =
-                    ContextCompat.checkSelfPermission(
-                            this@MainActivity,
-                            Manifest.permission.POST_NOTIFICATIONS
-                    ) == PackageManager.PERMISSION_GRANTED
-
-            if (!granted) {
-              notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-          }
-        }
-
-        LaunchedEffect(Unit) { settingsViewModel.checkForUpdates(BuildConfig.VERSION_NAME) }
-
-        val updateState by settingsViewModel.updateState.collectAsState()
-        val downloadProgress by settingsViewModel.downloadProgress.collectAsState()
-
-        LaunchedEffect(updateState) {
-          if (updateState is UpdateResult.UpdateAvailable) {
-            showStartupUpdateDialog = true
-          }
-        }
-
-        if (showStartupUpdateDialog && updateState is UpdateResult.UpdateAvailable) {
-          val state = updateState as UpdateResult.UpdateAvailable
-          AlertDialog(
-                  onDismissRequest = {
-                    showStartupUpdateDialog = false
-                    settingsViewModel.resetUpdateState()
-                  },
-                  title = { Text("Update Available") },
-                  text = {
-                    androidx.compose.foundation.layout.Column {
-                      Text(
-                              "A new version of Vidown (v${state.version}) is available. Would you like to install it now?"
-                      )
-                      if (downloadProgress != null) {
-                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp))
-                        androidx.compose.material3.LinearProgressIndicator(
-                                progress = { downloadProgress ?: 0f },
-                                modifier = Modifier.fillMaxWidth(),
-                        )
-                        Text(
-                                text = "Downloading: ${(downloadProgress!! * 100).toInt()}%",
-                                style =
-                                        androidx.compose.material3.MaterialTheme.typography
-                                                .bodySmall,
-                                modifier = Modifier.padding(top = 4.dp)
-                        )
-                      }
+                LaunchedEffect(Unit) {
+                    val intent = this@MainActivity.intent
+                    if (intent?.action == android.content.Intent.ACTION_SEND && intent.type == "text/plain") {
+                        intent.getStringExtra(android.content.Intent.EXTRA_TEXT)
+                            ?.let { sharedUrl = it }
                     }
-                  },
-                  confirmButton = {
-                    TextButton(
-                            onClick = {
-                              settingsViewModel.downloadUpdate(
-                                      state.downloadUrl,
-                                      "vidown-update-v${state.version}.apk"
-                              )
-                            },
-                            enabled = downloadProgress == null
-                    ) { Text(if (downloadProgress != null) "Downloading..." else "Update") }
-                  },
-                  dismissButton = {
-                    TextButton(
-                            onClick = {
-                              showStartupUpdateDialog = false
-                              settingsViewModel.resetUpdateState()
-                            },
-                            enabled = downloadProgress == null
-                    ) { Text("Later") }
-                  }
-          )
-        }
+                }
 
-        app.vidown.ui.navigation.MainNavigation(initialUrl = sharedUrl)
-      }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val notificationPermissionLauncher =
+                        rememberLauncherForActivityResult(
+                            contract = ActivityResultContracts.RequestPermission()
+                        ) {}
+
+                    LaunchedEffect(Unit) {
+                        val granted =
+                            ContextCompat.checkSelfPermission(
+                                this@MainActivity,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) == PackageManager.PERMISSION_GRANTED
+
+                        if (!granted) {
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+                }
+
+                LaunchedEffect(Unit) { settingsViewModel.checkForUpdates(BuildConfig.VERSION_NAME) }
+
+                val updateState by settingsViewModel.updateState.collectAsState()
+                val downloadProgress by settingsViewModel.downloadProgress.collectAsState()
+
+                LaunchedEffect(updateState) {
+                    if (updateState is UpdateResult.UpdateAvailable) {
+                        showStartupUpdateDialog = true
+                    }
+                }
+
+                if (showStartupUpdateDialog && updateState is UpdateResult.UpdateAvailable) {
+                    val state = updateState as UpdateResult.UpdateAvailable
+                    AlertDialog(
+                        onDismissRequest = {
+                            showStartupUpdateDialog = false
+                            settingsViewModel.resetUpdateState()
+                        },
+                        title = { Text("Update Available") },
+                        text = {
+                            androidx.compose.foundation.layout.Column {
+                                Text(
+                                    "A new version of Vidown (v${state.version}) is available. Would you like to install it now?"
+                                )
+                                if (downloadProgress != null) {
+                                    androidx.compose.foundation.layout.Spacer(
+                                        modifier = Modifier.height(
+                                            16.dp
+                                        )
+                                    )
+                                    androidx.compose.material3.LinearProgressIndicator(
+                                        progress = { downloadProgress ?: 0f },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                    Text(
+                                        text = "Downloading: ${(downloadProgress!! * 100).toInt()}%",
+                                        style =
+                                            androidx.compose.material3.MaterialTheme.typography
+                                                .bodySmall,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    settingsViewModel.downloadUpdate(
+                                        state.downloadUrl,
+                                        "vidown-update-v${state.version}.apk"
+                                    )
+                                },
+                                enabled = downloadProgress == null
+                            ) { Text(if (downloadProgress != null) "Downloading..." else "Update") }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = {
+                                    showStartupUpdateDialog = false
+                                    settingsViewModel.resetUpdateState()
+                                },
+                                enabled = downloadProgress == null
+                            ) { Text("Later") }
+                        }
+                    )
+                }
+
+                app.vidown.ui.navigation.MainNavigation(initialUrl = sharedUrl)
+            }
+        }
     }
-  }
 }

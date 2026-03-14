@@ -19,7 +19,6 @@ import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executors
 
 class Application : Application(), androidx.work.Configuration.Provider {
-
     override val workManagerConfiguration: androidx.work.Configuration
         get() {
             val settingsRepo = app.vidown.data.repository.SettingsRepository(this)

@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import app.vidown.R
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -175,7 +179,7 @@ fun PlayerScreen(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                contentDescription = "Back",
+                                contentDescription = stringResource(R.string.back),
                                 tint = Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -190,6 +194,7 @@ fun PlayerScreen(
                 ) {
                     ControlButton(
                         icon = Icons.Rounded.Replay10,
+                        contentDescription = stringResource(R.string.replay_10),
                         onClick = { exoPlayer.seekBack() }
                     )
 
@@ -210,8 +215,10 @@ fun PlayerScreen(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                                contentDescription = if (isPlaying) "Pause" else "Play",
-                                tint = Color.Black,
+                                contentDescription = if (isPlaying) stringResource(R.string.pause) else stringResource(
+                                    R.string.play
+                                ),
+                                tint = Color.White,
                                 modifier = Modifier.size(40.dp)
                             )
                         }
@@ -219,6 +226,7 @@ fun PlayerScreen(
 
                     ControlButton(
                         icon = Icons.Rounded.Forward10,
+                        contentDescription = stringResource(R.string.forward_10),
                         onClick = { exoPlayer.seekForward() }
                     )
                 }
@@ -254,17 +262,29 @@ fun PlayerScreen(
                         )
                     }
 
-                    Slider(
-                        value = currentPosition.toFloat(),
-                        onValueChange = { exoPlayer.seekTo(it.toLong()) },
-                        valueRange = 0f..duration.coerceAtLeast(1L).toFloat(),
-                        colors = SliderDefaults.colors(
-                            activeTrackColor = Color.White,
-                            inactiveTrackColor = Color.White.copy(alpha = 0.2f),
-                            thumbColor = Color.White
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
+                            contentDescription = stringResource(R.string.volume),
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Slider(
+                            value = currentPosition.toFloat(),
+                            onValueChange = { exoPlayer.seekTo(it.toLong()) },
+                            valueRange = 0f..duration.coerceAtLeast(1L).toFloat(),
+                            colors = SliderDefaults.colors(
+                                activeTrackColor = Color.White,
+                                inactiveTrackColor = Color.White.copy(alpha = 0.2f),
+                                thumbColor = Color.White
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
         }
@@ -301,6 +321,7 @@ fun PlayerScreen(
 @Composable
 private fun ControlButton(
     icon: ImageVector,
+    contentDescription: String?,
     onClick: () -> Unit
 ) {
     Surface(
@@ -320,7 +341,7 @@ private fun ControlButton(
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = contentDescription,
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
             )

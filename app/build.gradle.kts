@@ -1,34 +1,68 @@
+import com.android.build.api.variant.FilterConfiguration
+import com.android.build.api.variant.impl.VariantOutputImpl
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+
+    base
+}
+
+base {
+    archivesName.set("vidown-\${android.defaultConfig.versionName}")
+}
+
+val localProperties = Properties()
+val localPropertiesFile: File? = rootProject.file("local.properties")
+if (localPropertiesFile!!.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
 }
 
 android {
     namespace = "app.vidown"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "app.vidown"
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 10
         versionName = "0.5.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            // Read from local.properties, fallback to gradle.properties or null
+            val storeFileProp = localProperties.getProperty("RELEASE_STORE_FILE") 
+                ?: project.findProperty("RELEASE_STORE_FILE") as String?
+            
+            storeFile = storeFileProp?.let { file(it) }
+            storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD") 
+                ?: project.findProperty("RELEASE_STORE_PASSWORD") as String?
+            keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS") 
+                ?: project.findProperty("RELEASE_KEY_ALIAS") as String?
+            keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD") 
+                ?: project.findProperty("RELEASE_KEY_PASSWORD") as String?
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
@@ -51,16 +85,6 @@ android {
         }
     }
 
-    applicationVariants.all {
-        outputs.all {
-            val output = this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
-            val abi = output.getFilter(com.android.build.OutputFile.ABI)
-            if (abi != null) {
-                output.outputFileName = "vidown-$abi-${versionName}.apk"
-            }
-        }
-    }
-
     packaging {
         jniLibs {
             useLegacyPackaging = true
@@ -68,6 +92,24 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             excludes += "META-INF/DEPENDENCIES"
+        }
+    }
+}
+
+
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            val outputImpl = output as? VariantOutputImpl
+
+            val abi = output.filters.find {
+                it.filterType == FilterConfiguration.FilterType.ABI
+            }?.identifier
+
+            if (abi != null && outputImpl != null) {
+                val version = variant.outputs.first().versionName.get()
+                outputImpl.outputFileName.set("vidown-$abi-$version.apk")
+            }
         }
     }
 }
@@ -86,8 +128,8 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
     implementation(libs.okhttp)
-    implementation("androidx.documentfile:documentfile:1.0.1")
-    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation(libs.androidx.documentfile)
+    implementation(libs.androidx.core.splashscreen)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

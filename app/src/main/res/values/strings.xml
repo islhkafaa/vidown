@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Vidown</string>
+    <string name="back">Back</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="forward_10">Forward 10 seconds</string>
+    <string name="replay_10">Replay 10 seconds</string>
+    <string name="volume">Volume</string>
 </resources>

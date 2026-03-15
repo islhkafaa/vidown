@@ -176,6 +176,8 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
                         ) {
                             addOption("--extract-audio")
                             addOption("--audio-format", "m4a")
+                            addOption("--add-metadata")
+                            addOption("--embed-thumbnail")
                         }
                     }
 

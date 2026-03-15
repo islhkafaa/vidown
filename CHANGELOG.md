@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
   - Vertical swipe gestures for Volume control on the right half of the player.
   - Vertical swipe gestures for Brightness control on the left half of the player.
   - Custom visual indicators (overlays) providing real-time feedback for gesture adjustments.
+- **Smart Features**:
+  - **Clipboard Auto-Fetch**: App now detects video URLs in the clipboard and suggests pasting them for faster downloads.
+  - **Audio Meta-Tagging**: Downloaded audio files automatically include metadata (Title, Artist/Uploader) and embedded thumbnail as cover art.
 
 ### Changed
 

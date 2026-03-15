@@ -49,6 +49,10 @@ import app.vidown.ui.viewmodel.QueueViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.launch
+import android.content.ClipboardManager
+import android.content.Context
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,6 +76,21 @@ fun HomeScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val clipboardManager = remember { context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                homeViewModel.checkClipboard(clipboardManager)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    val clipboardUrl by homeViewModel.clipboardUrl.collectAsState()
 
     var showQueueSheet by rememberSaveable { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -304,6 +323,22 @@ fun HomeScreen(
                         }
                     }
                 }
+            }
+
+            AnimatedVisibility(
+                visible = clipboardUrl != null && urlInput.isEmpty(),
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                ClipboardSuggestionCard(
+                    url = clipboardUrl ?: "",
+                    onAction = {
+                        urlInput = it
+                        homeViewModel.fetchVideoInfo(it)
+                        homeViewModel.clearClipboardSuggestion()
+                    },
+                    onDismiss = { homeViewModel.clearClipboardSuggestion() }
+                )
             }
 
             AnimatedContent(
@@ -1000,5 +1035,80 @@ fun StatusPill(status: DownloadStatus, color: Color) {
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
             color = color
         )
+    }
+}
+
+@Composable
+fun ClipboardSuggestionCard(
+    url: String,
+    onAction: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+        border = BorderStroke(
+            1.dp, Brush.linearGradient(
+                colors = listOf(
+                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
+                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f)
+                )
+            )
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Rounded.ContentPaste,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Link detected in clipboard",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    url,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            TextButton(
+                onClick = { onAction(url) },
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary)
+            ) {
+                Text("Paste", fontWeight = FontWeight.Bold)
+            }
+
+            IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Rounded.Close,
+                    contentDescription = "Dismiss",
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.4f),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
     }
 }

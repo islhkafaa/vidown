@@ -10,6 +10,8 @@ import app.vidown.domain.models.DownloadRequest
 import app.vidown.domain.models.Format
 import app.vidown.domain.models.VideoInfo
 import java.util.UUID
+import android.content.ClipboardManager
+import android.util.Patterns
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +31,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Idle)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    private val _clipboardUrl = MutableStateFlow<String?>(null)
+    val clipboardUrl: StateFlow<String?> = _clipboardUrl.asStateFlow()
+
+    private var lastCheckedClip: String? = null
 
     fun fetchVideoInfo(url: String) {
         if (url.isBlank()) return
@@ -92,5 +99,27 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetState() {
         _uiState.value = HomeUiState.Idle
+    }
+
+    fun checkClipboard(clipboardManager: ClipboardManager) {
+        val clipData = clipboardManager.primaryClip
+        if (clipData != null && clipData.itemCount > 0) {
+            val text = clipData.getItemAt(0).text?.toString() ?: ""
+            if (text != lastCheckedClip && isValidUrl(text)) {
+                _clipboardUrl.value = text
+                lastCheckedClip = text
+            }
+        }
+    }
+
+    fun clearClipboardSuggestion() {
+        _clipboardUrl.value = null
+    }
+
+    private fun isValidUrl(url: String): Boolean {
+        return Patterns.WEB_URL.matcher(url).matches() &&
+                (url.contains("youtube.com") || url.contains("youtu.be") ||
+                        url.contains("instagram.com") || url.contains("facebook.com") ||
+                        url.contains("tiktok.com") || url.contains("twitter.com") || url.contains("x.com"))
     }
 }

@@ -23,6 +23,9 @@ class SettingsRepository(private val context: Context) {
         val CONCURRENT_DOWNLOADS_KEY =
             androidx.datastore.preferences.core.intPreferencesKey("concurrent_downloads")
         val DEFAULT_RESOLUTION_KEY = stringPreferencesKey("default_resolution")
+        val WIFI_ONLY_KEY = androidx.datastore.preferences.core.booleanPreferencesKey("wifi_only")
+        val AUTO_UPDATE_EXTRACTORS_KEY =
+            androidx.datastore.preferences.core.booleanPreferencesKey("auto_update_extractors")
     }
 
     val themeFlow: Flow<AppTheme> = context.dataStore.data
@@ -50,6 +53,16 @@ class SettingsRepository(private val context: Context) {
             preferences[DEFAULT_RESOLUTION_KEY] ?: "Always Best Video"
         }
 
+    val wifiOnlyFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[WIFI_ONLY_KEY] ?: false
+        }
+
+    val autoUpdateExtractorsFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[AUTO_UPDATE_EXTRACTORS_KEY] ?: true
+        }
+
     suspend fun setTheme(theme: AppTheme) {
         context.dataStore.edit { preferences ->
             preferences[THEME_KEY] = theme.name
@@ -75,6 +88,18 @@ class SettingsRepository(private val context: Context) {
     suspend fun setDefaultResolution(resolution: String) {
         context.dataStore.edit { preferences ->
             preferences[DEFAULT_RESOLUTION_KEY] = resolution
+        }
+    }
+
+    suspend fun setWifiOnly(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[WIFI_ONLY_KEY] = enabled
+        }
+    }
+
+    suspend fun setAutoUpdateExtractors(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[AUTO_UPDATE_EXTRACTORS_KEY] = enabled
         }
     }
 }

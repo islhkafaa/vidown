@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-03-15
+
+### Added
+
+- **UI Modularization**:
+  - Completely refactored `HomeScreen` and `HistoryScreen` logic into a new `app.vidown.ui.component` package.
+  - Introduced `GlassSurface` as a centralized component for consistent glassmorphism across the app.
+- **Media Organization**:
+  - Added platform-based filtering in the History screen (YouTube, TikTok, Instagram, Facebook, etc.).
+  - Introduced scrollable `FilterChip` UI for quick navigation of downloaded content.
+- **Smart Automation**:
+  - **WiFi-Only Downloads**: Added a new setting to restrict downloads to unmetered networks, preserving cellular data.
+  - **Auto-Update Engines**: Integrated a background maintenance worker (`MaintenanceManager`) that periodically keeps the `yt-dlp` extractors updated silently.
+  - New automation toggles added to the Settings screen for user control.
+
+### Fixed
+
+- Improved navigation import stability and layout consistency across different screen densities.
+
 ## [0.5.5] - 2026-03-15
 
 ### Added

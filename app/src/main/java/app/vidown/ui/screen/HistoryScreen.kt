@@ -3,34 +3,69 @@ package app.vidown.ui.screen
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.staggeredgrid.*
-import androidx.compose.foundation.shape.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.VolumeUp
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.*
-import androidx.compose.ui.draw.*
-import androidx.compose.ui.graphics.*
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.HistoryToggleOff
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.*
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.vidown.data.local.HistoryEntity
 import app.vidown.domain.models.DownloadStatus
+import app.vidown.ui.component.*
 import app.vidown.ui.viewmodel.HistoryViewModel
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import java.net.URLEncoder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -165,6 +200,40 @@ fun HistoryScreen(
                         keyboardActions = KeyboardActions(onSearch = { keyboardController?.hide() })
                     )
                 }
+
+                val selectedSource by viewModel.selectedSource.collectAsState()
+                val sources =
+                    listOf("All", "YouTube", "TikTok", "Instagram", "Facebook", "Twitter", "Other")
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    sources.forEach { source ->
+                        FilterChip(
+                            selected = selectedSource == source,
+                            onClick = { viewModel.updateSelectedSource(source) },
+                            label = { Text(source) },
+                            shape = CircleShape,
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = selectedSource == source,
+                                borderColor = Color.White.copy(alpha = 0.12f),
+                                selectedBorderColor = Color.Transparent,
+                                borderWidth = 1.dp
+                            )
+                        )
+                    }
+                }
             }
         }
     ) { innerPadding ->
@@ -180,19 +249,9 @@ fun HistoryScreen(
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                     modifier = Modifier.padding(40.dp)
                 ) {
-                    Surface(
+                    GlassSurface(
                         modifier = Modifier.size(80.dp),
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
-                        border = BorderStroke(
-                            1.dp,
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    Color.White.copy(alpha = 0.12f),
-                                    Color.White.copy(alpha = 0.02f)
-                                )
-                            )
-                        )
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -258,17 +317,7 @@ fun HistoryScreen(
                         },
                         onLongPress = { pendingDelete = record },
                         onRetry = {
-                            val request = app.vidown.domain.models.DownloadRequest(
-                                url = record.url,
-                                title = record.title,
-                                thumbnailUrl = record.thumbnailUrl,
-                                formatId = record.formatId,
-                                totalBytes = record.totalBytes
-                            )
-                            app.vidown.data.repository.DownloadQueueRepository.enqueueDownload(
-                                context,
-                                request
-                            )
+                            viewModel.retryDownload(record)
                             Toast.makeText(context, "Retrying download...", Toast.LENGTH_SHORT)
                                 .show()
                         },
@@ -281,150 +330,3 @@ fun HistoryScreen(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun GalleryHistoryItem(
-    record: HistoryEntity,
-    onTap: () -> Unit,
-    onLongPress: () -> Unit,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope
-) {
-    val isFailed = record.status == DownloadStatus.Failed
-    val isAudio =
-        record.formatId.contains("audio") || record.formatId.contains("m4a") || record.formatId.contains(
-            "mp3"
-        )
-
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .combinedClickable(
-                onClick = onTap,
-                onLongClick = onLongPress
-            ),
-        shape = RoundedCornerShape(26.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
-        border = BorderStroke(
-            1.dp, Brush.linearGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = 0.15f),
-                    Color.White.copy(alpha = 0.02f)
-                )
-            )
-        )
-    ) {
-        Box {
-            if (!record.thumbnailUrl.isNullOrBlank() && !isAudio) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(record.thumbnailUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(if (record.title.length > 30) 1f else 1.2f)
-                        .then(
-                            with(sharedTransitionScope) {
-                                Modifier.sharedElement(
-                                    rememberSharedContentState(
-                                        key = "video_${
-                                            if (record.fileUri != null) URLEncoder.encode(
-                                                record.fileUri,
-                                                "UTF-8"
-                                            ) else record.id
-                                        }"
-                                    ),
-                                    animatedVisibilityScope = animatedContentScope
-                                )
-                            }
-                        ),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.1f)
-                                )
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (isAudio) Icons.AutoMirrored.Rounded.VolumeUp else Icons.Rounded.SmartDisplay,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                    )
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.8f)
-                            ),
-                            startY = 100f
-                        )
-                    )
-            )
-
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(14.dp)
-            ) {
-                Text(
-                    text = record.title,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    ),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (isFailed) {
-                    Spacer(Modifier.height(4.dp))
-                    Surface(
-                        onClick = onRetry,
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.errorContainer,
-                        modifier = Modifier.height(24.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Rounded.Refresh,
-                                null,
-                                modifier = Modifier.size(12.dp),
-                                tint = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                "Retry",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}

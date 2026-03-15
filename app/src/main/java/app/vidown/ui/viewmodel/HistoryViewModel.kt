@@ -5,10 +5,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.vidown.data.local.AppDatabase
 import app.vidown.data.local.HistoryEntity
+import app.vidown.data.repository.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -18,10 +20,27 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
+    private val _selectedSource = MutableStateFlow("All")
+    val selectedSource: StateFlow<String> = _selectedSource
+
+    private val settingsRepository = SettingsRepository(application)
+
     val historyState: StateFlow<List<HistoryEntity>> =
-        combine(db.historyDao().getAllHistory(), _searchQuery) { history, query ->
-            if (query.isBlank()) history
-            else history.filter { it.title.contains(query, ignoreCase = true) }
+        combine(
+            db.historyDao().getAllHistory(),
+            _searchQuery,
+            _selectedSource
+        ) { history, query, source ->
+            history.filter { record ->
+                val matchesQuery = if (query.isBlank()) true
+                else record.title.contains(query, ignoreCase = true)
+
+                val recordSource = extractSource(record.url)
+                val matchesSource = if (source == "All") true
+                else recordSource.equals(source, ignoreCase = true)
+
+                matchesQuery && matchesSource
+            }
         }
             .stateIn(
                 scope = viewModelScope,
@@ -29,8 +48,41 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
                 initialValue = emptyList()
             )
 
+    private fun extractSource(url: String): String {
+        return when {
+            url.contains("youtube.com") || url.contains("youtu.be") -> "YouTube"
+            url.contains("tiktok.com") -> "TikTok"
+            url.contains("instagram.com") -> "Instagram"
+            url.contains("facebook.com") || url.contains("fb.watch") -> "Facebook"
+            url.contains("twitter.com") || url.contains("x.com") -> "Twitter"
+            else -> "Other"
+        }
+    }
+
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun updateSelectedSource(source: String) {
+        _selectedSource.value = source
+    }
+
+    fun retryDownload(record: HistoryEntity) {
+        viewModelScope.launch {
+            val wifiOnly = settingsRepository.wifiOnlyFlow.first()
+            val request = app.vidown.domain.models.DownloadRequest(
+                url = record.url,
+                title = record.title,
+                thumbnailUrl = record.thumbnailUrl,
+                formatId = record.formatId,
+                totalBytes = record.totalBytes
+            )
+            app.vidown.data.repository.DownloadQueueRepository.enqueueDownload(
+                getApplication<Application>().applicationContext,
+                request,
+                wifiOnly
+            )
+        }
     }
 
     fun clearHistory() {

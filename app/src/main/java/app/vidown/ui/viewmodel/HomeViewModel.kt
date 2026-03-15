@@ -58,42 +58,49 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startDownload(videoInfo: VideoInfo, format: Format) {
-        val downloadFormatId =
-            if (format.isVideo && format.acodec == "none") {
-                "${format.formatId}+bestaudio"
-            } else {
-                format.formatId
-            }
+        viewModelScope.launch {
+            val wifiOnly = settingsRepository.wifiOnlyFlow.first()
+            val downloadFormatId =
+                if (format.isVideo && format.acodec == "none") {
+                    "${format.formatId}+bestaudio"
+                } else {
+                    format.formatId
+                }
 
-        val request =
-            DownloadRequest(
-                url = videoInfo.displayUrl,
-                title = videoInfo.title,
-                thumbnailUrl = videoInfo.thumbnailUrl,
-                formatId = downloadFormatId,
-                totalBytes = format.displaySize
+            val request =
+                DownloadRequest(
+                    url = videoInfo.displayUrl,
+                    title = videoInfo.title,
+                    thumbnailUrl = videoInfo.thumbnailUrl,
+                    formatId = downloadFormatId,
+                    totalBytes = format.displaySize
+                )
+
+            DownloadQueueRepository.enqueueDownload(
+                getApplication<Application>().applicationContext,
+                request,
+                wifiOnly
             )
-
-        DownloadQueueRepository.enqueueDownload(
-            getApplication<Application>().applicationContext,
-            request
-        )
+        }
     }
 
     fun downloadPlaylist(playlistInfo: VideoInfo) {
-        val entries = playlistInfo.entries ?: return
-        val context = getApplication<Application>().applicationContext
-        entries.forEach { entry ->
-            val request =
-                DownloadRequest(
-                    id = UUID.randomUUID(),
-                    url = entry.displayUrl,
-                    title = entry.title,
-                    thumbnailUrl = entry.thumbnailUrl,
-                    formatId = "best",
-                    totalBytes = 0L
-                )
-            DownloadQueueRepository.enqueueDownload(context, request)
+        viewModelScope.launch {
+            val wifiOnly = settingsRepository.wifiOnlyFlow.first()
+            val entries = playlistInfo.entries ?: return@launch
+            val context = getApplication<Application>().applicationContext
+            entries.forEach { entry ->
+                val request =
+                    DownloadRequest(
+                        id = UUID.randomUUID(),
+                        url = entry.displayUrl,
+                        title = entry.title,
+                        thumbnailUrl = entry.thumbnailUrl,
+                        formatId = "best",
+                        totalBytes = 0L
+                    )
+                DownloadQueueRepository.enqueueDownload(context, request, wifiOnly)
+            }
         }
     }
 

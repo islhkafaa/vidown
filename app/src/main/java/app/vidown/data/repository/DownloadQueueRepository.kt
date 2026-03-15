@@ -1,7 +1,9 @@
 package app.vidown.data.repository
 
 import android.content.Context
+import androidx.work.Constraints
 import androidx.work.Data
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import app.vidown.data.worker.DownloadWorker
@@ -27,7 +29,11 @@ object DownloadQueueRepository {
         }
     }
 
-    fun enqueueDownload(context: Context, request: DownloadRequest) {
+    fun enqueueDownload(
+        context: Context,
+        request: DownloadRequest,
+        wifiOnly: Boolean = false
+    ) {
         addDownload(request)
 
         val inputData =
@@ -40,9 +46,17 @@ object DownloadQueueRepository {
                 .putLong(DownloadWorker.KEY_TOTAL_BYTES, request.totalBytes)
                 .build()
 
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(
+                if (wifiOnly) NetworkType.UNMETERED
+                else NetworkType.CONNECTED
+            )
+            .build()
+
         val workRequest =
             OneTimeWorkRequestBuilder<DownloadWorker>()
                 .setInputData(inputData)
+                .setConstraints(constraints)
                 .addTag(request.id.toString())
                 .build()
 

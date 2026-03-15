@@ -1,6 +1,7 @@
 package app.vidown.ui.viewmodel
 
 import android.app.Application
+import app.vidown.domain.manager.MaintenanceManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.vidown.data.repository.AppTheme
@@ -39,7 +40,21 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "Best Video"
+            initialValue = "Always Best Video"
+        )
+
+    val wifiOnlyState: StateFlow<Boolean> = settingsRepository.wifiOnlyFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
+    val autoUpdateExtractorsState: StateFlow<Boolean> = settingsRepository.autoUpdateExtractorsFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
         )
 
     private val updateManager = app.vidown.domain.manager.UpdateManager(application)
@@ -115,6 +130,22 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             val result = ytDlpRepository.updateYtDlp()
             _extractorUpdateResult.value = result
             _isUpdatingExtractors.value = false
+        }
+    }
+
+    fun setWifiOnly(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setWifiOnly(enabled)
+        }
+    }
+
+    fun setAutoUpdateExtractors(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setAutoUpdateExtractors(enabled)
+            MaintenanceManager.scheduleExtractorUpdates(
+                getApplication<Application>().applicationContext,
+                enabled
+            )
         }
     }
 }

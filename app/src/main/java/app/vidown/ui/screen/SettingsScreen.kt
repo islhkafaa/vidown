@@ -46,6 +46,8 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
     val concurrentDownloadsState by viewModel.concurrentDownloadsState.collectAsState()
     val defaultResolutionState by viewModel.defaultResolutionState.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
+    val wifiOnly by viewModel.wifiOnlyState.collectAsState()
+    val autoUpdateExtractors by viewModel.autoUpdateExtractorsState.collectAsState()
 
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -302,6 +304,14 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                         }
                     }
                     SettingsDivider()
+                    SettingsToggleRow(
+                        title = "Download only on Wi-Fi",
+                        subtitle = "Pause downloads on cellular data",
+                        icon = Icons.Rounded.Wifi,
+                        checked = wifiOnly,
+                        onCheckedChange = { viewModel.setWifiOnly(it) }
+                    )
+                    SettingsDivider()
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(
                             "Default Quality",
@@ -355,6 +365,14 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                                 )
                             }
                         }
+                    )
+                    SettingsDivider()
+                    SettingsToggleRow(
+                        title = "Auto-Update Engines",
+                        subtitle = "Keep download engines updated",
+                        icon = Icons.Rounded.AutoMode,
+                        checked = autoUpdateExtractors,
+                        onCheckedChange = { viewModel.setAutoUpdateExtractors(it) }
                     )
                     SettingsDivider()
                     SettingsActionRow(
@@ -482,6 +500,71 @@ fun SettingsActionRow(
             }
         }
         trailing()
+    }
+}
+
+@Composable
+fun SettingsToggleRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(20.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
+                border = BorderStroke(
+                    1.dp, Brush.linearGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.15f),
+                            Color.White.copy(alpha = 0.02f)
+                        )
+                    )
+                )
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        icon,
+                        null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Spacer(Modifier.width(16.dp))
+            Column {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
     }
 }
 

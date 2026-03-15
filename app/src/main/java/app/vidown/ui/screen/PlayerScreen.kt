@@ -14,6 +14,8 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import android.app.Activity
 import app.vidown.R
 
 import androidx.compose.ui.Alignment
@@ -38,13 +40,14 @@ import kotlinx.coroutines.delay
 import java.net.URLDecoder
 import java.util.Locale
 import androidx.core.net.toUri
-
 @OptIn(UnstableApi::class)
 @Composable
 fun PlayerScreen(
     modifier: Modifier = Modifier,
     encodedUri: String,
     onBack: () -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
 ) {
     val context = LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -66,6 +69,9 @@ fun PlayerScreen(
     var showControls by remember { mutableStateOf(true) }
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
+    var volume by remember { mutableFloatStateOf(1f) }
+    var brightness by remember { mutableFloatStateOf(-1f) }
+    val activity = context as? Activity
 
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
@@ -132,7 +138,14 @@ fun PlayerScreen(
                 }
             },
             update = { it.player = exoPlayer },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().then(
+                with(sharedTransitionScope) {
+                    Modifier.sharedElement(
+                        rememberSharedContentState(key = "video_$encodedUri"),
+                        animatedVisibilityScope = animatedContentScope
+                    )
+                }
+            )
         )
 
         AnimatedVisibility(
@@ -301,6 +314,21 @@ fun PlayerScreen(
                                 onTap = { showControls = true }
                             )
                         }
+                        .pointerInput(Unit) {
+                            detectVerticalDragGestures { change, dragAmount ->
+                                change.consume()
+                                val delta = -dragAmount / 500f
+                                brightness =
+                                    (if (brightness < 0) activity?.window?.attributes?.screenBrightness
+                                        ?: 0.5f else brightness) + delta
+                                brightness = brightness.coerceIn(0f, 1f)
+                                activity?.window?.let { window ->
+                                    val layoutParams = window.attributes
+                                    layoutParams.screenBrightness = brightness
+                                    window.attributes = layoutParams
+                                }
+                            }
+                        }
                 )
                 Box(
                     modifier = Modifier
@@ -312,8 +340,85 @@ fun PlayerScreen(
                                 onTap = { showControls = true }
                             )
                         }
+                        .pointerInput(Unit) {
+                            detectVerticalDragGestures { change, dragAmount ->
+                                change.consume()
+                                val delta = -dragAmount / 1000f
+                                volume = (volume + delta).coerceIn(0f, 1f)
+                                exoPlayer.volume = volume
+                            }
+                        }
                 )
             }
+
+            SwipeIndicator(
+                value = brightness,
+                icon = Icons.Rounded.BrightnessMedium,
+                label = stringResource(R.string.brightness),
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 32.dp),
+                isVisible = brightness >= 0
+            )
+
+            SwipeIndicator(
+                value = volume,
+                icon = Icons.AutoMirrored.Rounded.VolumeUp,
+                label = stringResource(R.string.volume),
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 32.dp),
+                isVisible = volume != 1f
+            )
+        }
+    }
+}
+
+@Composable
+private fun SwipeIndicator(
+    value: Float,
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    isVisible: Boolean
+) {
+    var show by remember { mutableStateOf(false) }
+
+    LaunchedEffect(value) {
+        if (isVisible) {
+            show = true
+            delay(1000)
+            show = false
+        }
+    }
+
+    AnimatedVisibility(
+        visible = show,
+        enter = fadeIn() + scaleIn(),
+        exit = fadeOut() + scaleOut(),
+        modifier = modifier
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LinearProgressIndicator(
+                progress = { value.coerceIn(0f, 1f) },
+                color = Color.White,
+                trackColor = Color.White.copy(alpha = 0.2f),
+                modifier = Modifier
+                    .width(60.dp)
+                    .height(4.dp)
+            )
         }
     }
 }

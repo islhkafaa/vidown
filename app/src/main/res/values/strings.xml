@@ -6,4 +6,6 @@
     <string name="forward_10">Forward 10 seconds</string>
     <string name="replay_10">Replay 10 seconds</string>
     <string name="volume">Volume</string>
+    <string name="brightness">Brightness</string>
 </resources>
+

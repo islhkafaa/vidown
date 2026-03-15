@@ -29,24 +29,23 @@ android {
         applicationId = "app.vidown"
         minSdk = 28
         targetSdk = 36
-        versionCode = 10
-        versionName = "0.5.2"
+        versionCode = 11
+        versionName = "0.5.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
         create("release") {
-            // Read from local.properties, fallback to gradle.properties or null
-            val storeFileProp = localProperties.getProperty("RELEASE_STORE_FILE") 
+            val storeFileProp = localProperties.getProperty("RELEASE_STORE_FILE")
                 ?: project.findProperty("RELEASE_STORE_FILE") as String?
-            
+
             storeFile = storeFileProp?.let { file(it) }
-            storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD") 
+            storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
                 ?: project.findProperty("RELEASE_STORE_PASSWORD") as String?
-            keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS") 
+            keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS")
                 ?: project.findProperty("RELEASE_KEY_ALIAS") as String?
-            keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD") 
+            keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
                 ?: project.findProperty("RELEASE_KEY_PASSWORD") as String?
         }
     }

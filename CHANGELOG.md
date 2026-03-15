@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.5] - 2026-03-15
+
+### Added
+
+- **Shared Transitions**:
+  - Implemented `SharedTransitionLayout` across the navigation flow.
+  - Smooth morphing animation when transitioning from Home or History thumbnails to the Player Screen.
+- **Advanced Player Gestures**:
+  - Vertical swipe gestures for Volume control on the right half of the player.
+  - Vertical swipe gestures for Brightness control on the left half of the player.
+  - Custom visual indicators (overlays) providing real-time feedback for gesture adjustments.
+
+### Changed
+
+- **Player UI Polishing**:
+  - Externalized all hardcoded strings to `strings.xml` for better localization and accessibility.
+  - Fixed Play/Pause icon tint to consistent white.
+  - Improved layout alignment of time labels and slider controls.
+- **Project Maintenance**:
+  - Optimized imports and cleaned up redundant boilerplate in `MainActivity` and `PlayerScreen`.
+
 ## [0.5.2] - 2026-03-10
 
 ### Changed

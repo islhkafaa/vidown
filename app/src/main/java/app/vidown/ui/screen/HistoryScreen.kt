@@ -1,6 +1,8 @@
 package app.vidown.ui.screen
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.staggeredgrid.*
@@ -36,7 +38,9 @@ import java.net.URLEncoder
 fun HistoryScreen(
     modifier: Modifier = Modifier,
     viewModel: HistoryViewModel = viewModel(),
-    onPlayEvent: (String) -> Unit = {}
+    onPlayEvent: (String) -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
 ) {
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
@@ -98,9 +102,12 @@ fun HistoryScreen(
                         }
                     },
                     scrollBehavior = scrollBehavior,
-                    colors = TopAppBarDefaults.largeTopAppBarColors(
+                    colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface,
                         scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                        navigationIconContentColor = Color.Unspecified,
+                        titleContentColor = Color.Unspecified,
+                        actionIconContentColor = Color.Unspecified
                     ),
                 )
 
@@ -232,15 +239,21 @@ fun HistoryScreen(
                     GalleryHistoryItem(
                         record = record,
                         onTap = {
-                            if (record.status == DownloadStatus.Success && record.fileUri != null) {
-                                val encodedUri = URLEncoder.encode(record.fileUri, "UTF-8")
-                                onPlayEvent(encodedUri)
-                            } else if (record.status == DownloadStatus.Failed) {
-                                Toast.makeText(context, "Playback failed", Toast.LENGTH_SHORT)
-                                    .show()
-                            } else {
-                                Toast.makeText(context, "Media unavailable", Toast.LENGTH_SHORT)
-                                    .show()
+                            when (record.status) {
+                                DownloadStatus.Success if record.fileUri != null -> {
+                                    val encodedUri = URLEncoder.encode(record.fileUri, "UTF-8")
+                                    onPlayEvent(encodedUri)
+                                }
+
+                                DownloadStatus.Failed -> {
+                                    Toast.makeText(context, "Playback failed", Toast.LENGTH_SHORT)
+                                        .show()
+                                }
+
+                                else -> {
+                                    Toast.makeText(context, "Media unavailable", Toast.LENGTH_SHORT)
+                                        .show()
+                                }
                             }
                         },
                         onLongPress = { pendingDelete = record },
@@ -258,7 +271,9 @@ fun HistoryScreen(
                             )
                             Toast.makeText(context, "Retrying download...", Toast.LENGTH_SHORT)
                                 .show()
-                        }
+                        },
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedContentScope = animatedContentScope
                     )
                 }
             }
@@ -273,7 +288,9 @@ fun GalleryHistoryItem(
     onTap: () -> Unit,
     onLongPress: () -> Unit,
     onRetry: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
 ) {
     val isFailed = record.status == DownloadStatus.Failed
     val isAudio =
@@ -310,7 +327,22 @@ fun GalleryHistoryItem(
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(if (record.title.length > 30) 1f else 1.2f),
+                        .aspectRatio(if (record.title.length > 30) 1f else 1.2f)
+                        .then(
+                            with(sharedTransitionScope) {
+                                Modifier.sharedElement(
+                                    rememberSharedContentState(
+                                        key = "video_${
+                                            if (record.fileUri != null) URLEncoder.encode(
+                                                record.fileUri,
+                                                "UTF-8"
+                                            ) else record.id
+                                        }"
+                                    ),
+                                    animatedVisibilityScope = animatedContentScope
+                                )
+                            }
+                        ),
                     contentScale = ContentScale.Crop
                 )
             } else {

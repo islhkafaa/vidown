@@ -56,7 +56,9 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = viewModel(),
     queueViewModel: QueueViewModel = viewModel(),
-    initialSearchUrl: String? = null
+    initialSearchUrl: String? = null,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
 ) {
     LaunchedEffect(initialSearchUrl) {
         if (initialSearchUrl != null) {
@@ -154,9 +156,12 @@ fun HomeScreen(
                     }
                 },
                 scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                    navigationIconContentColor = Color.Unspecified,
+                    titleContentColor = Color.Unspecified,
+                    actionIconContentColor = Color.Unspecified
                 ),
             )
         }
@@ -340,7 +345,9 @@ fun HomeScreen(
                                 urlInput = entry.displayUrl
                                 homeViewModel.fetchVideoInfo(entry.displayUrl)
                             },
-                            homeViewModel = homeViewModel
+                            homeViewModel = homeViewModel,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedContentScope = animatedContentScope
                         )
                     }
                 }
@@ -445,7 +452,9 @@ fun VideoDetailsContent(
     onDownload: (Format) -> Unit,
     onDownloadPlaylist: () -> Unit,
     onEntryClick: (VideoInfo) -> Unit,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
 ) {
     var defaultResolution by remember { mutableStateOf("Always Best Video") }
 
@@ -456,7 +465,13 @@ fun VideoDetailsContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 40.dp)
     ) {
-        item { VideoInfoCard(videoInfo = videoInfo) }
+        item {
+            VideoInfoCard(
+                videoInfo = videoInfo,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedContentScope = animatedContentScope
+            )
+        }
 
         if (!videoInfo.entries.isNullOrEmpty()) {
             item {
@@ -683,7 +698,11 @@ fun PlaylistEntryItem(entry: VideoInfo, onClick: () -> Unit) {
 }
 
 @Composable
-fun VideoInfoCard(videoInfo: VideoInfo) {
+fun VideoInfoCard(
+    videoInfo: VideoInfo,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
+) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -707,7 +726,14 @@ fun VideoInfoCard(videoInfo: VideoInfo) {
                         .crossfade(true)
                         .build(),
                     contentDescription = "Thumbnail",
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().then(
+                        with(sharedTransitionScope) {
+                            Modifier.sharedElement(
+                                rememberSharedContentState(key = "video_${java.net.URLEncoder.encode(videoInfo.url, "UTF-8")}"),
+                                animatedVisibilityScope = animatedContentScope
+                            )
+                        }
+                    ),
                     contentScale = ContentScale.Crop
                 )
                 Box(

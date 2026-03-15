@@ -2,13 +2,7 @@ package app.vidown.ui.navigation
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
@@ -17,7 +11,6 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.animation.*
 import androidx.compose.runtime.Composable
@@ -57,87 +50,13 @@ fun MainNavigation(initialUrl: String? = null) {
     val isPlayerActive = currentRoute?.startsWith("player") == true
 
     SharedTransitionLayout {
-        Scaffold(
-            bottomBar = {
-                if (!isPlayerActive) {
-                    Surface(
-                        modifier = Modifier
-                            .padding(start = 80.dp, end = 80.dp, bottom = 26.dp)
-                            .fillMaxWidth(),
-                        shape = CircleShape,
-                        tonalElevation = 0.dp,
-                        shadowElevation = 20.dp,
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-                        border = BorderStroke(
-                            1.dp, Brush.linearGradient(
-                                colors = listOf(
-                                    Color.White.copy(alpha = 0.15f),
-                                    Color.White.copy(alpha = 0.02f)
-                                )
-                            )
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(64.dp),
-                            horizontalArrangement = Arrangement.spacedBy(
-                                28.dp,
-                                Alignment.CenterHorizontally
-                            ),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            items.forEach { screen ->
-                                val isSelected = currentRoute?.startsWith(screen.route) == true
-                                Box(
-                                    modifier = Modifier
-                                        .clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            indication = null
-                                        ) {
-                                            navController.navigate(screen.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Surface(
-                                        modifier = Modifier.size(42.dp),
-                                        shape = CircleShape,
-                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                        border = if (isSelected) BorderStroke(
-                                            1.dp,
-                                            Color.White.copy(alpha = 0.1f)
-                                        ) else null
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                imageVector = screen.icon,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(24.dp),
-                                                tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                                    alpha = 0.6f
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
                 startDestination =
                     if (initialUrl != null) "${Screen.Home.route}?url=$initialUrl"
                     else Screen.Home.route,
-                modifier = if (isPlayerActive) Modifier else Modifier.padding(innerPadding)
+                modifier = Modifier.fillMaxSize()
             ) {
                 composable(
                     route = "${Screen.Home.route}?url={url}",
@@ -210,6 +129,80 @@ fun MainNavigation(initialUrl: String? = null) {
                         sharedTransitionScope = this@SharedTransitionLayout,
                         animatedContentScope = this@composable
                     )
+                }
+            }
+
+            if (!isPlayerActive) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(start = 80.dp, end = 80.dp, bottom = 26.dp)
+                        .navigationBarsPadding()
+                        .fillMaxWidth(),
+                    shape = CircleShape,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 20.dp,
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(
+                        1.dp, Brush.linearGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.15f),
+                                Color.White.copy(alpha = 0.02f)
+                            )
+                        )
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            28.dp,
+                            Alignment.CenterHorizontally
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        items.forEach { screen ->
+                            val isSelected = currentRoute?.startsWith(screen.route) == true
+                            Box(
+                                modifier = Modifier
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) {
+                                        navController.navigate(screen.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Surface(
+                                    modifier = Modifier.size(42.dp),
+                                    shape = CircleShape,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    border = if (isSelected) BorderStroke(
+                                        1.dp,
+                                        Color.White.copy(alpha = 0.1f)
+                                    ) else null
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = screen.icon,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(24.dp),
+                                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                alpha = 0.6f
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

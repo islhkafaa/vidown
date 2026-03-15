@@ -230,7 +230,7 @@ fun HistoryScreen(
                     start = 20.dp,
                     end = 20.dp,
                     top = 12.dp,
-                    bottom = 40.dp
+                    bottom = 120.dp
                 ),
                 verticalItemSpacing = 16.dp,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)

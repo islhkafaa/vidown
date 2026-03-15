@@ -78,7 +78,8 @@ fun HomeScreen(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-    val clipboardManager = remember { context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager }
+    val clipboardManager =
+        remember { context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -498,7 +499,7 @@ fun VideoDetailsContent(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 40.dp)
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 120.dp)
     ) {
         item {
             VideoInfoCard(
@@ -761,14 +762,23 @@ fun VideoInfoCard(
                         .crossfade(true)
                         .build(),
                     contentDescription = "Thumbnail",
-                    modifier = Modifier.fillMaxSize().then(
-                        with(sharedTransitionScope) {
-                            Modifier.sharedElement(
-                                rememberSharedContentState(key = "video_${java.net.URLEncoder.encode(videoInfo.url, "UTF-8")}"),
-                                animatedVisibilityScope = animatedContentScope
-                            )
-                        }
-                    ),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            with(sharedTransitionScope) {
+                                Modifier.sharedElement(
+                                    rememberSharedContentState(
+                                        key = "video_${
+                                            java.net.URLEncoder.encode(
+                                                videoInfo.url,
+                                                "UTF-8"
+                                            )
+                                        }"
+                                    ),
+                                    animatedVisibilityScope = animatedContentScope
+                                )
+                            }
+                        ),
                     contentScale = ContentScale.Crop
                 )
                 Box(

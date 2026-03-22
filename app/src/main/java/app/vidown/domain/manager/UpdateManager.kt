@@ -48,9 +48,7 @@ class UpdateManager(private val context: Context) {
                     return@withContext UpdateResult.Error("Failed to check for updates: HTTP ${response.code}")
                 }
 
-                val responseBody = response.body?.string() ?: return@withContext UpdateResult.Error(
-                    "Empty response"
-                )
+                val responseBody = response.body.string()
                 val releaseObj = json.parseToJsonElement(responseBody).jsonObject
 
                 val tagName = releaseObj["tag_name"]?.jsonPrimitive?.content ?: ""
@@ -91,10 +89,7 @@ class UpdateManager(private val context: Context) {
                     return@withContext false
                 }
 
-                val body = response.body ?: run {
-                    _downloadProgress.value = null
-                    return@withContext false
-                }
+                val body = response.body
 
                 val totalBytes = body.contentLength()
                 val updatesDir = File(context.cacheDir, "updates")

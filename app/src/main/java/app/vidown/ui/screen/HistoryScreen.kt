@@ -58,15 +58,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import app.vidown.R
 import app.vidown.data.local.HistoryEntity
 import app.vidown.domain.models.DownloadStatus
 import app.vidown.ui.component.*
 import app.vidown.ui.viewmodel.HistoryViewModel
-import java.net.URLEncoder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,9 +88,14 @@ fun HistoryScreen(
 
     if (pendingDelete != null) {
         AlertDialog(
-            onDismissRequest = { },
-            title = { Text("Delete Record", style = MaterialTheme.typography.titleLarge) },
-            text = { Text("Are you sure you want to delete this record? The file will not be deleted.") },
+            onDismissRequest = { pendingDelete = null },
+            title = {
+                Text(
+                    stringResource(R.string.delete_record),
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = { Text(stringResource(R.string.delete_confirm_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -97,10 +103,12 @@ fun HistoryScreen(
                         pendingDelete = null
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("Delete") }
+                ) { Text(stringResource(R.string.delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { }) { Text("Cancel") }
+                TextButton(onClick = {
+                    pendingDelete = null
+                }) { Text(stringResource(R.string.cancel)) }
             },
             shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surface
@@ -114,7 +122,7 @@ fun HistoryScreen(
                 LargeTopAppBar(
                     title = {
                         Text(
-                            text = "History",
+                            text = stringResource(R.string.history),
                             style = MaterialTheme.typography.displaySmall
                         )
                     },
@@ -130,7 +138,7 @@ fun HistoryScreen(
                             ) {
                                 Icon(
                                     Icons.Rounded.DeleteSweep,
-                                    contentDescription = "Clear History",
+                                    contentDescription = stringResource(R.string.clear_history),
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -168,7 +176,7 @@ fun HistoryScreen(
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = {
                             Text(
-                                "Search history...",
+                                stringResource(R.string.search_history_placeholder),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )
@@ -267,11 +275,11 @@ fun HistoryScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "No history",
+                            text = stringResource(R.string.no_history),
                             style = MaterialTheme.typography.titleLarge
                         )
                         Text(
-                            text = "Your downloaded videos will appear here.",
+                            text = stringResource(R.string.history_empty_message),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                             textAlign = TextAlign.Center
@@ -299,18 +307,29 @@ fun HistoryScreen(
                         record = record,
                         onTap = {
                             when (record.status) {
-                                DownloadStatus.Success if record.fileUri != null -> {
-                                    val encodedUri = URLEncoder.encode(record.fileUri, "UTF-8")
-                                    onPlayEvent(encodedUri)
+                                DownloadStatus.Success -> {
+                                    if (record.fileUri != null) {
+                                        val encodedUri =
+                                            java.net.URLEncoder.encode(record.fileUri, "UTF-8")
+                                        onPlayEvent(encodedUri)
+                                    }
                                 }
 
                                 DownloadStatus.Failed -> {
-                                    Toast.makeText(context, "Playback failed", Toast.LENGTH_SHORT)
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.playback_failed),
+                                        Toast.LENGTH_SHORT
+                                    )
                                         .show()
                                 }
 
                                 else -> {
-                                    Toast.makeText(context, "Media unavailable", Toast.LENGTH_SHORT)
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.media_unavailable),
+                                        Toast.LENGTH_SHORT
+                                    )
                                         .show()
                                 }
                             }
@@ -318,7 +337,11 @@ fun HistoryScreen(
                         onLongPress = { pendingDelete = record },
                         onRetry = {
                             viewModel.retryDownload(record)
-                            Toast.makeText(context, "Retrying download...", Toast.LENGTH_SHORT)
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.retrying_download),
+                                Toast.LENGTH_SHORT
+                            )
                                 .show()
                         },
                         sharedTransitionScope = sharedTransitionScope,
@@ -329,4 +352,3 @@ fun HistoryScreen(
         }
     }
 }
-

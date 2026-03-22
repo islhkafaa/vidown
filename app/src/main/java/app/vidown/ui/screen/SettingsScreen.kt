@@ -3,7 +3,6 @@ package app.vidown.ui.screen
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -19,17 +18,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.vidown.BuildConfig
+import app.vidown.R
 import app.vidown.data.repository.AppTheme
 import app.vidown.domain.manager.UpdateResult
+import app.vidown.ui.component.*
 import app.vidown.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,7 +76,7 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
             },
             title = {
                 Text(
-                    "Update Available",
+                    stringResource(R.string.update_available),
                     style = MaterialTheme.typography.titleLarge
                 )
             },
@@ -85,7 +85,7 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                     is UpdateResult.UpdateAvailable -> {
                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Text(
-                                "A new version (v${state.version}) is available.",
+                                stringResource(R.string.new_version_available, state.version),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             if (downloadProgress != null) {
@@ -100,7 +100,10 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                                         trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                                     )
                                     Text(
-                                        text = "${(downloadProgress!! * 100).toInt()}% Downloaded",
+                                        text = stringResource(
+                                            R.string.download_percent,
+                                            (downloadProgress!! * 100).toInt()
+                                        ),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.primary,
                                         textAlign = TextAlign.End,
@@ -112,12 +115,12 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                     }
 
                     is UpdateResult.UpToDate -> {
-                        Text("You are using the latest version of Vidown.")
+                        Text(stringResource(R.string.up_to_date))
                     }
 
                     is UpdateResult.Error -> {
                         Text(
-                            "Update failed: ${state.message}",
+                            stringResource(R.string.update_failed, state.message),
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -137,13 +140,19 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                         },
                         enabled = downloadProgress == null,
                         shape = RoundedCornerShape(12.dp)
-                    ) { Text(if (downloadProgress != null) "Downloading..." else "Install Update") }
+                    ) {
+                        Text(
+                            if (downloadProgress != null) stringResource(R.string.downloading) else stringResource(
+                                R.string.install_update
+                            )
+                        )
+                    }
                 } else {
                     TextButton(
                         onClick = {
                             viewModel.resetUpdateState()
                         }
-                    ) { Text("OK") }
+                    ) { Text(stringResource(R.string.ok)) }
                 }
             },
             dismissButton = {
@@ -153,7 +162,12 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                             viewModel.resetUpdateState()
                         },
                         enabled = downloadProgress == null
-                    ) { Text("Later", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    ) {
+                        Text(
+                            stringResource(R.string.later),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             },
             shape = RoundedCornerShape(28.dp),
@@ -167,7 +181,7 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
             LargeTopAppBar(
                 title = {
                     Text(
-                        text = "Settings",
+                        text = stringResource(R.string.settings),
                         style = MaterialTheme.typography.displaySmall
                     )
                 },
@@ -190,26 +204,26 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             item {
-                SettingsGroup(title = "Appearance") {
+                SettingsGroup(title = stringResource(R.string.appearance)) {
                     ThemeOptionRow(
-                        title = "System Default",
-                        subtitle = "Follow device setting",
+                        title = stringResource(R.string.system_default),
+                        subtitle = stringResource(R.string.follow_device_setting),
                         icon = Icons.Rounded.AutoAwesome,
                         isSelected = currentTheme == AppTheme.SYSTEM,
                         onClick = { viewModel.setTheme(AppTheme.SYSTEM) }
                     )
                     SettingsDivider()
                     ThemeOptionRow(
-                        title = "Light",
-                        subtitle = "Bright interface",
+                        title = stringResource(R.string.light),
+                        subtitle = stringResource(R.string.bright_interface),
                         icon = Icons.Rounded.LightMode,
                         isSelected = currentTheme == AppTheme.LIGHT,
                         onClick = { viewModel.setTheme(AppTheme.LIGHT) }
                     )
                     SettingsDivider()
                     ThemeOptionRow(
-                        title = "Dark",
-                        subtitle = "Dark interface",
+                        title = stringResource(R.string.dark),
+                        subtitle = stringResource(R.string.dark_interface),
                         icon = Icons.Rounded.DarkMode,
                         isSelected = currentTheme == AppTheme.DARK,
                         onClick = { viewModel.setTheme(AppTheme.DARK) }
@@ -218,10 +232,12 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
             }
 
             item {
-                SettingsGroup(title = "Storage & Downloads") {
+                SettingsGroup(title = stringResource(R.string.storage_downloads)) {
                     SettingsActionRow(
-                        title = "Download Location",
-                        subtitle = if (downloadUriState.isNullOrEmpty()) "Internal storage" else "Custom folder",
+                        title = stringResource(R.string.download_location),
+                        subtitle = if (downloadUriState.isNullOrEmpty()) stringResource(R.string.internal_storage) else stringResource(
+                            R.string.custom_folder
+                        ),
                         icon = Icons.Rounded.FolderOpen,
                         onClick = { launcher.launch(null) },
                         trailing = {
@@ -249,11 +265,11 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "Concurrent Downloads",
+                                stringResource(R.string.concurrent_downloads),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                "Max parallel downloads",
+                                stringResource(R.string.max_parallel_downloads),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -305,8 +321,8 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                     }
                     SettingsDivider()
                     SettingsToggleRow(
-                        title = "Download only on Wi-Fi",
-                        subtitle = "Pause downloads on cellular data",
+                        title = stringResource(R.string.download_only_on_wifi),
+                        subtitle = stringResource(R.string.pause_on_cellular),
                         icon = Icons.Rounded.Wifi,
                         checked = wifiOnly,
                         onCheckedChange = { viewModel.setWifiOnly(it) }
@@ -314,7 +330,7 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                     SettingsDivider()
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(
-                            "Default Quality",
+                            stringResource(R.string.default_quality),
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
                         Spacer(Modifier.height(12.dp))
@@ -344,10 +360,10 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
             }
 
             item {
-                SettingsGroup(title = "Updates") {
+                SettingsGroup(title = stringResource(R.string.updates)) {
                     SettingsActionRow(
-                        title = "Update Extractors",
-                        subtitle = "Update download engines",
+                        title = stringResource(R.string.update_extractors),
+                        subtitle = stringResource(R.string.update_engines),
                         icon = Icons.Rounded.Analytics,
                         onClick = { if (!isUpdatingExtractors) viewModel.updateExtractors() },
                         trailing = {
@@ -368,16 +384,19 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                     )
                     SettingsDivider()
                     SettingsToggleRow(
-                        title = "Auto-Update Engines",
-                        subtitle = "Keep download engines updated",
+                        title = stringResource(R.string.auto_update_engines),
+                        subtitle = stringResource(R.string.keep_engines_updated),
                         icon = Icons.Rounded.AutoMode,
                         checked = autoUpdateExtractors,
                         onCheckedChange = { viewModel.setAutoUpdateExtractors(it) }
                     )
                     SettingsDivider()
                     SettingsActionRow(
-                        title = "App Update",
-                        subtitle = "Version ${BuildConfig.VERSION_NAME}",
+                        title = stringResource(R.string.app_update),
+                        subtitle = stringResource(
+                            R.string.version_format,
+                            BuildConfig.VERSION_NAME
+                        ),
                         icon = Icons.Rounded.VerifiedUser,
                         onClick = { if (!isCheckingUpdate) viewModel.checkForUpdates(BuildConfig.VERSION_NAME) },
                         trailing = {
@@ -398,8 +417,8 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                     )
                     SettingsDivider()
                     SettingsActionRow(
-                        title = "About Vidown",
-                        subtitle = "Video downloader for Android",
+                        title = stringResource(R.string.about_vidown),
+                        subtitle = stringResource(R.string.about_subtitle),
                         icon = Icons.Rounded.Info,
                         onClick = { /* Could open a link */ },
                         trailing = {
@@ -412,230 +431,6 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                         }
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = title.uppercase(),
-            style = MaterialTheme.typography.labelMedium.copy(
-                letterSpacing = 1.2.sp,
-                fontWeight = FontWeight.Bold
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-            modifier = Modifier.padding(start = 8.dp)
-        )
-        Surface(
-            shape = RoundedCornerShape(26.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
-            border = BorderStroke(
-                1.dp, Brush.linearGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.15f),
-                        Color.White.copy(alpha = 0.02f)
-                    )
-                )
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(content = content)
-        }
-    }
-}
-
-@Composable
-fun SettingsActionRow(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    trailing: @Composable () -> Unit = {}
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(20.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-                border = BorderStroke(
-                    1.dp, Brush.linearGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.15f),
-                            Color.White.copy(alpha = 0.02f)
-                        )
-                    )
-                )
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        icon,
-                        null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                )
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        trailing()
-    }
-}
-
-@Composable
-fun SettingsToggleRow(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) }
-            .padding(20.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-                border = BorderStroke(
-                    1.dp, Brush.linearGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.15f),
-                            Color.White.copy(alpha = 0.02f)
-                        )
-                    )
-                )
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        icon,
-                        null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                )
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-        )
-    }
-}
-
-@Composable
-fun SettingsDivider() {
-    HorizontalDivider(
-        modifier = Modifier.padding(horizontal = 20.dp),
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-    )
-}
-
-@Composable
-fun ThemeOptionRow(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
-        border = if (isSelected) BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-        ) else null,
-        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = CircleShape,
-                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface.copy(
-                    alpha = 0.15f
-                ),
-                border = BorderStroke(
-                    1.dp, Brush.linearGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.15f),
-                            Color.White.copy(alpha = 0.05f)
-                        )
-                    )
-                )
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                )
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

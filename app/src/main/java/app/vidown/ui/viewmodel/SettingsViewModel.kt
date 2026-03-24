@@ -36,12 +36,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = 3
         )
 
-    val defaultResolutionState: StateFlow<String> = settingsRepository.defaultResolutionFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "Always Best Video"
-        )
 
     val wifiOnlyState: StateFlow<Boolean> = settingsRepository.wifiOnlyFlow
         .stateIn(
@@ -96,11 +90,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun setDefaultResolution(resolution: String) {
-        viewModelScope.launch {
-            settingsRepository.setDefaultResolution(resolution)
-        }
-    }
 
     fun checkForUpdates(currentVersion: String) {
         viewModelScope.launch {

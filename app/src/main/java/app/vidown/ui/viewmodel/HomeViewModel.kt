@@ -53,10 +53,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    suspend fun getDefaultResolution(): String {
-        return settingsRepository.defaultResolutionFlow.first()
-    }
-
     fun startDownload(videoInfo: VideoInfo, format: Format) {
         viewModelScope.launch {
             val wifiOnly = settingsRepository.wifiOnlyFlow.first()

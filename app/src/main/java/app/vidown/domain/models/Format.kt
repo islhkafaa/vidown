@@ -21,8 +21,14 @@ data class Format(
     val fps: Double? = null,
 ) {
     val isVideo: Boolean
-        get() = vcodec != "none"
+        get() = vcodec != null && vcodec != "none"
+
+    val isAudioOnly: Boolean
+        get() = !isVideo && acodec != null && acodec != "none"
 
     val displaySize: Long
         get() = filesize ?: filesizeApprox ?: 0L
+
+    val friendlyLabel: String
+        get() = formatNote ?: resolution ?: if (isAudioOnly) "Audio" else "Standard"
 }

@@ -3,7 +3,6 @@ package app.vidown.ui.component
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,7 +14,6 @@ import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -112,6 +110,7 @@ fun ErrorContent(message: String) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VideoDetailsContent(
     videoInfo: VideoInfo,
@@ -122,9 +121,34 @@ fun VideoDetailsContent(
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope
 ) {
-    var defaultResolution by remember { mutableStateOf("Always Best Video") }
+    var showFormats by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
 
-    LaunchedEffect(Unit) { defaultResolution = homeViewModel.getDefaultResolution() }
+    if (showFormats) {
+        ModalBottomSheet(
+            onDismissRequest = { showFormats = false },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            dragHandle = {
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 12.dp)
+                        .width(40.dp)
+                        .height(4.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
+                )
+            }
+        ) {
+            FormatSelectionSheet(
+                videoInfo = videoInfo,
+                onFormatSelected = { format ->
+                    onDownload(format)
+                    showFormats = false
+                }
+            )
+        }
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -173,138 +197,26 @@ fun VideoDetailsContent(
             }
         } else {
             item {
-                if (defaultResolution == "Always Ask") {
-                    var isExpanded by rememberSaveable { mutableStateOf(true) }
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { isExpanded = !isExpanded }
-                                .padding(vertical = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Available Formats",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Icon(
-                                imageVector = if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                                contentDescription = "Toggle formats",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        AnimatedVisibility(
-                            visible = isExpanded,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                val validFormats = videoInfo.formats
-                                    .filter { !it.formatId.contains("storyboard") }
-                                    .sortedByDescending { it.displaySize }
-
-                                validFormats.forEach { format ->
-                                    FormatItem(format = format, onClick = { onDownload(format) })
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                if (defaultResolution != "Always Ask") {
-                    Button(
-                        onClick = {
-                            val bestFormat = videoInfo.formats
-                                .filter { it.isVideo && !it.formatId.contains("storyboard") }
-                                .maxByOrNull { it.height ?: 0 }
-                                ?: videoInfo.formats.firstOrNull()
-
-                            bestFormat?.let { onDownload(it) }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                    ) {
-                        Icon(Icons.Rounded.Download, contentDescription = null)
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            "Download Best Resolution",
-                            style = MaterialTheme.typography.titleSmall
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun FormatItem(format: Format, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-        border = BorderStroke(
-            1.dp, Brush.linearGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = 0.15f),
-                    Color.White.copy(alpha = 0.02f)
-                )
-            )
-        ),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = format.resolution
-                        ?: if (format.acodec != "none") "Audio" else "Pure Data",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Button(
+                    onClick = { showFormats = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                ) {
+                    Icon(Icons.Rounded.Download, contentDescription = null)
+                    Spacer(Modifier.width(12.dp))
                     Text(
-                        text = format.ext.uppercase(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        "Download Options",
+                        style = MaterialTheme.typography.titleSmall
                     )
-                    if (format.displaySize > 0) {
-                        Text(
-                            text = " • ${format.displaySize / (1024 * 1024)} MB",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }

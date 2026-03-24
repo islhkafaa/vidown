@@ -31,6 +31,17 @@ Vidown is an Android video downloader built with Jetpack Compose and `yt-dlp`. I
 2. Open in Android Studio (Ladybug or newer).
 3. Build and run the `app` module.
 
+## Building for Release
+
+To build a signed release APK, you need to provide signing information in your `local.properties` file or as Gradle project properties:
+
+```properties
+RELEASE_STORE_FILE=/path/to/your/keystore.jks
+RELEASE_STORE_PASSWORD=your_keystore_password
+RELEASE_KEY_ALIAS=your_key_alias
+RELEASE_KEY_PASSWORD=your_key_password
+```
+
 ## APK Downloads
 
 Current stable APKs are available in [GitHub Releases](https://github.com/islhkafaa/vidown/releases).

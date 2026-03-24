@@ -44,7 +44,6 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
     val isUpdatingExtractors by viewModel.isUpdatingExtractors.collectAsState()
     val downloadUriState by viewModel.downloadUriState.collectAsState()
     val concurrentDownloadsState by viewModel.concurrentDownloadsState.collectAsState()
-    val defaultResolutionState by viewModel.defaultResolutionState.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
     val wifiOnly by viewModel.wifiOnlyState.collectAsState()
     val autoUpdateExtractors by viewModel.autoUpdateExtractorsState.collectAsState()
@@ -328,34 +327,6 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                         onCheckedChange = { viewModel.setWifiOnly(it) }
                     )
                     SettingsDivider()
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Text(
-                            stringResource(R.string.default_quality),
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("Always Best Video", "Always Ask").forEach { option ->
-                                val selected = defaultResolutionState == option
-                                FilterChip(
-                                    selected = selected,
-                                    onClick = { viewModel.setDefaultResolution(option) },
-                                    label = { Text(option) },
-                                    shape = CircleShape,
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                                    ),
-                                    border = FilterChipDefaults.filterChipBorder(
-                                        enabled = true,
-                                        selected = selected,
-                                        borderColor = MaterialTheme.colorScheme.outlineVariant,
-                                        selectedBorderColor = Color.Transparent
-                                    )
-                                )
-                            }
-                        }
-                    }
                 }
             }
 

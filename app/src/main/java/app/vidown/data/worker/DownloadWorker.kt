@@ -17,6 +17,7 @@ import app.vidown.data.local.AppDatabase
 import app.vidown.data.local.HistoryEntity
 import app.vidown.data.repository.DownloadQueueRepository
 import app.vidown.data.repository.MediaStoreManager
+import app.vidown.data.repository.SettingsRepository
 import app.vidown.domain.models.DownloadStatus
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
@@ -150,6 +151,7 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
             val requestId = UUID.fromString(requestIdStr)
             val db = AppDatabase.getDatabase(applicationContext)
+            val settingsRepository = SettingsRepository(applicationContext)
 
             try {
                 YoutubeDL.getInstance().init(applicationContext)
@@ -179,6 +181,26 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
                             addOption("--add-metadata")
                             addOption("--embed-thumbnail")
                         }
+
+                        val concurrentFragments = settingsRepository.concurrentFragmentsFlow.firstOrNull() ?: 4
+                        val bufferSizeLabel = settingsRepository.bufferSizeFlow.firstOrNull() ?: "Standard"
+                        val forceIpv4 = settingsRepository.forceIpv4Flow.firstOrNull() ?: false
+
+                        addOption("--concurrent-fragments", concurrentFragments)
+
+                        val bufferBytes = when (bufferSizeLabel) {
+                            "High" -> "128K"
+                            "Extreme" -> "1M"
+                            else -> "16K"
+                        }
+                        addOption("--buffer-size", bufferBytes)
+                        addOption("--http-chunk-size", bufferBytes)
+
+                        if (forceIpv4) {
+                            addOption("--force-ipv4")
+                        }
+
+                        addOption("--hls-use-mpegts")
                     }
 
                 DownloadQueueRepository.updateStatus(requestId, DownloadStatus.Downloading)
@@ -251,8 +273,6 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
                 val isVideo = extension in listOf("mp4", "webm", "mkv", "avi")
 
-                val settingsRepository =
-                    app.vidown.data.repository.SettingsRepository(applicationContext)
                 val customUri = settingsRepository.downloadUriFlow.firstOrNull()
 
                 val savedUriString =

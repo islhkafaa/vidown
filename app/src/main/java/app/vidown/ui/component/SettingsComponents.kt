@@ -28,17 +28,8 @@ fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             modifier = Modifier.padding(start = 8.dp)
         )
-        Surface(
+        GlassSurface(
             shape = RoundedCornerShape(26.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
-            border = BorderStroke(
-                1.dp, Brush.linearGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.15f),
-                        Color.White.copy(alpha = 0.02f)
-                    )
-                )
-            ),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(content = content)
@@ -63,27 +54,18 @@ fun SettingsActionRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            Surface(
+            GlassSurface(
                 modifier = Modifier.size(40.dp),
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-                border = BorderStroke(
-                    1.dp, Brush.linearGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.15f),
-                            Color.White.copy(alpha = 0.02f)
-                        )
-                    )
-                )
+                alpha = 0.2f,
+                borderAlpha = 0.15f
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        icon,
-                        null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Icon(
+                    icon,
+                    null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             Spacer(Modifier.width(16.dp))
             Column {
@@ -119,27 +101,18 @@ fun SettingsToggleRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            Surface(
+            GlassSurface(
                 modifier = Modifier.size(40.dp),
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-                border = BorderStroke(
-                    1.dp, Brush.linearGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.15f),
-                            Color.White.copy(alpha = 0.02f)
-                        )
-                    )
-                )
+                alpha = 0.2f,
+                borderAlpha = 0.15f
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        icon,
-                        null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Icon(
+                    icon,
+                    null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             Spacer(Modifier.width(16.dp))
             Column {
@@ -160,8 +133,9 @@ fun SettingsToggleRow(
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                 checkedTrackColor = MaterialTheme.colorScheme.primary,
-                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                uncheckedBorderColor = Color.White.copy(alpha = 0.1f)
             )
         )
     }

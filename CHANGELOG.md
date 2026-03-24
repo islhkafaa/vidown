@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.5] - 2026-03-24
+
+### Added
+
+- **Dynamic Format Selection**:
+  - Replaced the legacy "Default Quality" setting with a premium `FormatSelectionSheet`.
+  - Users can now select specific video and audio formats (resolutions, codecs, sizes) for each download.
+  - Added intelligent format labeling: "High Quality" (DASH streams) and "Direct" (Progressive streams).
+  - Categorized selection UI grouping formats into Video and Audio sections.
+- **Download Engine Optimization**:
+  - **Concurrent Fragments**: Added support for multi-threaded fetching (up to 16 connections) for DASH/HLS streams.
+  - **Buffer Tuning**: Integrated configurable buffer and chunk sizes (`Standard`, `High`, `Extreme`) for optimized throughput.
+  - **Network Refinements**: Added a "Force IPv4" toggle to bypass ISP-specific IPv6 routing performance bottlenecks.
+  - Improved HLS merging performance using `--hls-use-mpegts`.
+
+### Changed
+
+- **UI & UX Polish**:
+  - Refined **Settings** with a unified glassmorphism aesthetic using the new `GlassSurface` component.
+  - Revamped toggle and action rows with circular glass icons and transparent states.
+  - Enhanced **Snackbar** positioning with consistent bottom padding to prevent navigation bar overlap.
+- **UI Simplification**:
+  - Removed the "Default Quality" preference from settings as it's no longer necessary with per-download selection.
+  - Consolidated the download flow into a single "Download Options" interaction.
+- **Improved Metadata Labels**:
+  - Refined `Format` domain model with `friendlyLabel` logic to strip technical jargon (e.g., "DASH") for a cleaner experience.
+
+### Removed
+
+- Deprecated "Always Ask" and "Always Best Video" resolution logic in favor of the new dynamic selection.
+
 ## [0.6.0] - 2026-03-15
 
 ### Added

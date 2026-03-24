@@ -25,6 +25,10 @@ class SettingsRepository(private val context: Context) {
         val WIFI_ONLY_KEY = androidx.datastore.preferences.core.booleanPreferencesKey("wifi_only")
         val AUTO_UPDATE_EXTRACTORS_KEY =
             androidx.datastore.preferences.core.booleanPreferencesKey("auto_update_extractors")
+        val CONCURRENT_FRAGMENTS_KEY =
+            androidx.datastore.preferences.core.intPreferencesKey("concurrent_fragments")
+        val BUFFER_SIZE_KEY = stringPreferencesKey("buffer_size")
+        val FORCE_IPV4_KEY = androidx.datastore.preferences.core.booleanPreferencesKey("force_ipv4")
     }
 
     val themeFlow: Flow<AppTheme> = context.dataStore.data
@@ -58,6 +62,21 @@ class SettingsRepository(private val context: Context) {
             preferences[AUTO_UPDATE_EXTRACTORS_KEY] ?: true
         }
 
+    val concurrentFragmentsFlow: Flow<Int> = context.dataStore.data
+        .map { preferences ->
+            preferences[CONCURRENT_FRAGMENTS_KEY] ?: 4
+        }
+
+    val bufferSizeFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[BUFFER_SIZE_KEY] ?: "Standard"
+        }
+
+    val forceIpv4Flow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[FORCE_IPV4_KEY] ?: false
+        }
+
     suspend fun setTheme(theme: AppTheme) {
         context.dataStore.edit { preferences ->
             preferences[THEME_KEY] = theme.name
@@ -89,6 +108,24 @@ class SettingsRepository(private val context: Context) {
     suspend fun setAutoUpdateExtractors(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[AUTO_UPDATE_EXTRACTORS_KEY] = enabled
+        }
+    }
+
+    suspend fun setConcurrentFragments(count: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[CONCURRENT_FRAGMENTS_KEY] = count
+        }
+    }
+
+    suspend fun setBufferSize(size: String) {
+        context.dataStore.edit { preferences ->
+            preferences[BUFFER_SIZE_KEY] = size
+        }
+    }
+
+    suspend fun setForceIpv4(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[FORCE_IPV4_KEY] = enabled
         }
     }
 }

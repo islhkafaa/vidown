@@ -29,6 +29,27 @@ data class Format(
     val displaySize: Long
         get() = filesize ?: filesizeApprox ?: 0L
 
+    val hasAudio: Boolean
+        get() = acodec != null && acodec != "none"
+
     val friendlyLabel: String
-        get() = formatNote ?: resolution ?: if (isAudioOnly) "Audio" else "Standard"
+        get() {
+            var label = formatNote ?: resolution ?: if (isAudioOnly) "Audio" else "Standard"
+
+            label = label.replace("DASH video", "", ignoreCase = true)
+                .replace("DASH audio", "", ignoreCase = true)
+                .replace("DASH", "", ignoreCase = true)
+                .trim()
+
+            if (label.isEmpty()) {
+                label = resolution ?: if (height != null) "${height}p" else "Standard"
+            }
+
+            return when {
+                isVideo && hasAudio -> "$label (Direct)"
+                isVideo -> "$label (High Quality)"
+                isAudioOnly -> "$label (Audio)"
+                else -> label
+            }
+        }
 }

@@ -47,6 +47,9 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
     val downloadProgress by viewModel.downloadProgress.collectAsState()
     val wifiOnly by viewModel.wifiOnlyState.collectAsState()
     val autoUpdateExtractors by viewModel.autoUpdateExtractorsState.collectAsState()
+    val concurrentFragments by viewModel.concurrentFragmentsState.collectAsState()
+    val bufferSize by viewModel.bufferSizeState.collectAsState()
+    val forceIpv4 by viewModel.forceIpv4State.collectAsState()
 
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -174,8 +177,16 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
         )
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(bottom = 96.dp)
+            )
+        },
         topBar = {
             LargeTopAppBar(
                 title = {
@@ -400,6 +411,84 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )
                         }
+                    )
+                }
+            }
+
+            item {
+                SettingsGroup(title = "Engine Performance") {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            "Concurrent Fragments",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        GlassSurface(
+                            shape = CircleShape,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                listOf(1, 4, 8, 16).forEach { count ->
+                                    val isSelected = concurrentFragments == count
+                                    Surface(
+                                        onClick = { viewModel.setConcurrentFragments(count) },
+                                        shape = CircleShape,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(
+                                            text = count.toString(),
+                                            modifier = Modifier.padding(vertical = 10.dp),
+                                            textAlign = TextAlign.Center,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Text(
+                            "Increasing fragments speeds up DASH/HLS downloads but uses more CPU and memory.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                    SettingsDivider()
+                    SettingsActionRow(
+                        title = "Buffer Size",
+                        subtitle = bufferSize,
+                        icon = Icons.Rounded.Storage,
+                        onClick = {
+                            val next = when (bufferSize) {
+                                "Standard" -> "High"
+                                "High" -> "Extreme"
+                                else -> "Standard"
+                            }
+                            viewModel.setBufferSize(next)
+                        },
+                        trailing = {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                                null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                        }
+                    )
+                    SettingsDivider()
+                    SettingsToggleRow(
+                        title = "Force IPv4",
+                        subtitle = "May improve speed on some ISP networks",
+                        icon = Icons.Rounded.NetworkCheck,
+                        checked = forceIpv4,
+                        onCheckedChange = { viewModel.setForceIpv4(it) }
                     )
                 }
             }

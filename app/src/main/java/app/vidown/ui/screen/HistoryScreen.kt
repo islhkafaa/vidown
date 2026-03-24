@@ -1,5 +1,6 @@
 package app.vidown.ui.screen
 
+import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.SharedTransitionScope
@@ -38,6 +39,8 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -69,6 +72,7 @@ import app.vidown.domain.models.DownloadStatus
 import app.vidown.ui.component.*
 import app.vidown.ui.viewmodel.HistoryViewModel
 
+@SuppressLint("LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
@@ -115,8 +119,16 @@ fun HistoryScreen(
         )
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(bottom = 96.dp)
+            )
+        },
         topBar = {
             Column {
                 LargeTopAppBar(
@@ -318,7 +330,7 @@ fun HistoryScreen(
                                 DownloadStatus.Failed -> {
                                     Toast.makeText(
                                         context,
-                                        context.getString(R.string.playback_failed),
+                                        R.string.playback_failed,
                                         Toast.LENGTH_SHORT
                                     )
                                         .show()
@@ -327,7 +339,7 @@ fun HistoryScreen(
                                 else -> {
                                     Toast.makeText(
                                         context,
-                                        context.getString(R.string.media_unavailable),
+                                        R.string.media_unavailable,
                                         Toast.LENGTH_SHORT
                                     )
                                         .show()
@@ -339,7 +351,7 @@ fun HistoryScreen(
                             viewModel.retryDownload(record)
                             Toast.makeText(
                                 context,
-                                context.getString(R.string.retrying_download),
+                                R.string.retrying_download,
                                 Toast.LENGTH_SHORT
                             )
                                 .show()

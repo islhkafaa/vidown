@@ -2,13 +2,16 @@
 
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/kotlin-%237F52FF.svg?style=for-the-badge&logo=kotlin&logoColor=white)
-![Version](https://img.shields.io/badge/version-0.6.0-blue.svg?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.6.5-blue.svg?style=for-the-badge)
 
 Vidown is an Android video downloader built with Jetpack Compose and `yt-dlp`. It provides background-resilient downloads and a minimalist video player.
 
 ## Features
 
 - **yt-dlp Engine**: High-quality video merging via `youtubedl-android` and `ffmpeg`.
+- **Engine Optimization**: Multi-threaded concurrent fragment fetching and configurable buffer sizes (v0.6.5).
+- **History & Organization**: Platform-based filtering for download history.
+- **Glassmorphism UI**: Premium frosted surfaces and fluid Material 3 Expressive motion.
 - **Background Downloads**: Managed by WorkManager as a Foreground Service.
 - **Auto-Updates**: Background extractor updates and direct GitHub OTA support.
 - **Media Organization**: Platform-based filtering for download history.

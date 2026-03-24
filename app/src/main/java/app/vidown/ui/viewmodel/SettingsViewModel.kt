@@ -51,6 +51,27 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = true
         )
 
+    val concurrentFragmentsState: StateFlow<Int> = settingsRepository.concurrentFragmentsFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 4
+        )
+
+    val bufferSizeState: StateFlow<String> = settingsRepository.bufferSizeFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "Standard"
+        )
+
+    val forceIpv4State: StateFlow<Boolean> = settingsRepository.forceIpv4Flow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
     private val updateManager = app.vidown.domain.manager.UpdateManager(application)
 
     private val _updateState =
@@ -135,6 +156,24 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 getApplication<Application>().applicationContext,
                 enabled
             )
+        }
+    }
+
+    fun setConcurrentFragments(count: Int) {
+        viewModelScope.launch {
+            settingsRepository.setConcurrentFragments(count)
+        }
+    }
+
+    fun setBufferSize(size: String) {
+        viewModelScope.launch {
+            settingsRepository.setBufferSize(size)
+        }
+    }
+
+    fun setForceIpv4(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setForceIpv4(enabled)
         }
     }
 }

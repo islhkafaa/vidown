@@ -21,4 +21,8 @@ class QueueViewModel : ViewModel() {
     fun removeDownload(context: Context, id: UUID) {
         DownloadQueueRepository.removeDownload(context, id)
     }
+
+    fun reorderQueue(fromIndex: Int, toIndex: Int) {
+        DownloadQueueRepository.reorderQueue(fromIndex, toIndex)
+    }
 }

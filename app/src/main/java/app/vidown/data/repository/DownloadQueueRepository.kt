@@ -110,6 +110,17 @@ object DownloadQueueRepository {
         WorkManager.getInstance(context).cancelAllWorkByTag(id.toString())
     }
 
+    fun reorderQueue(fromIndex: Int, toIndex: Int) {
+        _downloadQueue.update { currentList ->
+            val mutableList = currentList.toMutableList()
+            if (fromIndex in mutableList.indices && toIndex in mutableList.indices) {
+                val item = mutableList.removeAt(fromIndex)
+                mutableList.add(toIndex, item)
+            }
+            mutableList
+        }
+    }
+
     fun getDownload(id: UUID): DownloadRequest? {
         return _downloadQueue.value.find { it.id == id }
     }

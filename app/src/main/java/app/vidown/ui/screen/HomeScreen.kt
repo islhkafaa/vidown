@@ -161,6 +161,9 @@ fun HomeScreen(
                 },
                 onRemove = { request ->
                     queueViewModel.removeDownload(context, request.id)
+                },
+                onReorder = { from, to ->
+                    queueViewModel.reorderQueue(from, to)
                 }
             )
         }

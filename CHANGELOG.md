@@ -7,12 +7,15 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - **Multi-Language Support**:
-  - Full localization support for **Indonesian** (Bahasa Indonesia) across all screens.
-  - Added a manual **Language** selection setting in the Appearance menu.
-  - Runtime language switching using `AppCompatDelegate`, allowing the UI to update instantly without a restart.
-- **Improved UI Consistency**:
-  - Refined **Settings** screen layout with proper casing for group titles (e.g., "Appearance" instead of "APPEARANCE").
-  - Fixed hardcoded accessibility labels and error messages for a fully localized experience.
+  - Added support for **Indonesian** (Bahasa Indonesia).
+  - Added a **Language** setting in the Appearance menu.
+  - Implemented runtime language switching so the UI updates instantly.
+- **Queue Management**:
+  - Added **Drag-to-Reorder** for pending downloads.
+  - Added haptic feedback when reordering items.
+- **UI Consistency**:
+  - Updated **Settings** titles to use proper casing (e.g., "Appearance").
+  - Localized accessibility labels and error messages.
 
 ### Changed
 
@@ -24,7 +27,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - **Dynamic Format Selection**:
-  - Replaced the legacy "Default Quality" setting with a premium `FormatSelectionSheet`.
+  - Added `FormatSelectionSheet` to choose video and audio quality.
   - Users can now select specific video and audio formats (resolutions, codecs, sizes) for each download.
   - Added intelligent format labeling: "High Quality" (DASH streams) and "Direct" (Progressive streams).
   - Categorized selection UI grouping formats into Video and Audio sections.
@@ -36,10 +39,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- **UI & UX Polish**:
-  - Refined **Settings** with a unified glassmorphism aesthetic using the new `GlassSurface` component.
-  - Revamped toggle and action rows with circular glass icons and transparent states.
-  - Enhanced **Snackbar** positioning with consistent bottom padding to prevent navigation bar overlap.
+- **UI & UX**:
+  - Updated **Settings** to use the new `GlassSurface` component.
+  - Updated toggle rows with circular icons.
+  - Fixed **Snackbar** positioning to avoid overlapping navigation bars.
 - **UI Simplification**:
   - Removed the "Default Quality" preference from settings as it's no longer necessary with per-download selection.
   - Consolidated the download flow into a single "Download Options" interaction.
@@ -98,8 +101,8 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - **Glass Design System**:
-  - Entire application rebuilt with a premium "Editorial" aesthetic (Deep Charcoal and Off-White tokens).
-  - Advanced glassmorphism implemented across all cards, bars, and icons using custom translucency, gradient borders, and frosted textures.
+  - Rebuilt the application with a consistent design language.
+  - Implemented translucency and gradient borders across cards and bars.
 - **Enhanced Navigation**:
   - Re-engineered the bottom navigation bar into a compact, centered, floating "Glass Pill".
   - Custom circular selection indicators and reduced item padding for a modern, minimal look.

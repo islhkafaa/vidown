@@ -130,6 +130,7 @@ dependencies {
     implementation(libs.androidx.documentfile)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.appcompat)
+    implementation(libs.reorderable)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

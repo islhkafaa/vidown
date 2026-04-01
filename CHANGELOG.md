@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.7] - 2026-04-01
+
+### Added
+
+- **Multi-Language Support**:
+  - Full localization support for **Indonesian** (Bahasa Indonesia) across all screens.
+  - Added a manual **Language** selection setting in the Appearance menu.
+  - Runtime language switching using `AppCompatDelegate`, allowing the UI to update instantly without a restart.
+- **Improved UI Consistency**:
+  - Refined **Settings** screen layout with proper casing for group titles (e.g., "Appearance" instead of "APPEARANCE").
+  - Fixed hardcoded accessibility labels and error messages for a fully localized experience.
+
+### Changed
+
+- **MainActivity Migration**: Upgraded `MainActivity` to extend `AppCompatActivity` to support modern Android per-app language preferences.
+- **Stable Filtering**: Refactored History filtering logic to use internal keys, ensuring source filters work correctly regardless of the selected language.
+
 ## [0.6.5] - 2026-03-24
 
 ### Added

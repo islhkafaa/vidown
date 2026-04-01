@@ -12,11 +12,13 @@ import app.vidown.domain.models.VideoInfo
 import java.util.UUID
 import android.content.ClipboardManager
 import android.util.Patterns
+import androidx.lifecycle.application
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import app.vidown.R
 
 sealed class HomeUiState {
     data object Idle : HomeUiState()
@@ -48,7 +50,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 .onSuccess { info -> _uiState.value = HomeUiState.Success(info) }
                 .onFailure { error ->
                     _uiState.value =
-                        HomeUiState.Error(error.localizedMessage ?: "Unknown error occurred")
+                        HomeUiState.Error(
+                            error.localizedMessage ?: application.getString(R.string.unknown_error)
+                        )
                 }
         }
     }

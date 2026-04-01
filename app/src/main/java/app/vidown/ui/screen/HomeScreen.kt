@@ -321,7 +321,7 @@ fun HomeScreen(
                             ) {
                                 Icon(
                                     Icons.Rounded.Clear,
-                                    contentDescription = "Clear",
+                                    contentDescription = stringResource(R.string.clear),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -367,7 +367,7 @@ fun HomeScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                                contentDescription = "Fetch",
+                                contentDescription = stringResource(R.string.fetch),
                                 tint = if (urlInput.isNotEmpty() && uiState !is HomeUiState.Loading)
                                     MaterialTheme.colorScheme.onPrimary
                                 else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
@@ -414,12 +414,17 @@ fun HomeScreen(
                     is HomeUiState.Error -> ErrorContent(message = state.message)
                     is HomeUiState.Success -> {
                         val addedToDownloads = stringResource(R.string.added_to_downloads)
-                        val addedPlaylistToDownloads = stringResource(R.string.added_playlist_to_downloads)
+                        val addedPlaylistToDownloads =
+                            stringResource(R.string.added_playlist_to_downloads)
                         VideoDetailsContent(
                             videoInfo = state.videoInfo,
                             onDownload = { format ->
                                 homeViewModel.startDownload(state.videoInfo, format)
-                                coroutineScope.launch { snackbarHostState.showSnackbar(addedToDownloads) }
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        addedToDownloads
+                                    )
+                                }
                                 urlInput = ""
                                 homeViewModel.resetState()
                             },

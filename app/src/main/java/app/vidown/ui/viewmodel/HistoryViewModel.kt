@@ -20,7 +20,7 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
-    private val _selectedSource = MutableStateFlow("All")
+    private val _selectedSource = MutableStateFlow("all_sources")
     val selectedSource: StateFlow<String> = _selectedSource
 
     private val settingsRepository = SettingsRepository(application)
@@ -36,7 +36,7 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
                 else record.title.contains(query, ignoreCase = true)
 
                 val recordSource = extractSource(record.url)
-                val matchesSource = if (source == "All") true
+                val matchesSource = if (source == "all_sources") true
                 else recordSource.equals(source, ignoreCase = true)
 
                 matchesQuery && matchesSource
@@ -55,7 +55,7 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
             url.contains("instagram.com") -> "Instagram"
             url.contains("facebook.com") || url.contains("fb.watch") -> "Facebook"
             url.contains("twitter.com") || url.contains("x.com") -> "Twitter"
-            else -> "Other"
+            else -> "other_source"
         }
     }
 

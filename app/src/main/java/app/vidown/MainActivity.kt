@@ -4,7 +4,9 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -24,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -31,8 +34,9 @@ import app.vidown.data.repository.AppTheme
 import app.vidown.domain.manager.UpdateResult
 import app.vidown.ui.theme.VidownTheme
 import app.vidown.ui.viewmodel.SettingsViewModel
+import app.vidown.ui.navigation.MainNavigation
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -40,6 +44,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settingsViewModel: SettingsViewModel = viewModel()
             val appTheme by settingsViewModel.themeState.collectAsState()
+            val appLanguage by settingsViewModel.languageState.collectAsState()
+
+            LaunchedEffect(appLanguage) {
+                val appLocales = LocaleListCompat.forLanguageTags(appLanguage)
+                AppCompatDelegate.setApplicationLocales(appLocales)
+            }
 
             val isDarkTheme =
                 when (appTheme) {
@@ -97,11 +107,11 @@ class MainActivity : ComponentActivity() {
                             showStartupUpdateDialog = false
                             settingsViewModel.resetUpdateState()
                         },
-                        title = { Text("Update Available") },
+                        title = { Text(stringResource(R.string.update_available)) },
                         text = {
                             androidx.compose.foundation.layout.Column {
                                 Text(
-                                    "A new version of Vidown (v${state.version}) is available. Would you like to install it now?"
+                                    stringResource(R.string.new_version_available, state.version)
                                 )
                                 if (downloadProgress != null) {
                                     androidx.compose.foundation.layout.Spacer(
@@ -114,7 +124,10 @@ class MainActivity : ComponentActivity() {
                                         modifier = Modifier.fillMaxWidth(),
                                     )
                                     Text(
-                                        text = "Downloading: ${(downloadProgress!! * 100).toInt()}%",
+                                        text = stringResource(
+                                            R.string.download_percent,
+                                            (downloadProgress!! * 100).toInt()
+                                        ),
                                         style =
                                             androidx.compose.material3.MaterialTheme.typography
                                                 .bodySmall,
@@ -132,7 +145,13 @@ class MainActivity : ComponentActivity() {
                                     )
                                 },
                                 enabled = downloadProgress == null
-                            ) { Text(if (downloadProgress != null) "Downloading..." else "Update") }
+                            ) {
+                                Text(
+                                    if (downloadProgress != null) stringResource(R.string.downloading) else stringResource(
+                                        R.string.install_update
+                                    )
+                                )
+                            }
                         },
                         dismissButton = {
                             TextButton(
@@ -141,12 +160,12 @@ class MainActivity : ComponentActivity() {
                                     settingsViewModel.resetUpdateState()
                                 },
                                 enabled = downloadProgress == null
-                            ) { Text("Later") }
+                            ) { Text(stringResource(R.string.later)) }
                         }
                     )
                 }
 
-                app.vidown.ui.navigation.MainNavigation(initialUrl = sharedUrl)
+                MainNavigation(initialUrl = sharedUrl)
             }
         }
     }

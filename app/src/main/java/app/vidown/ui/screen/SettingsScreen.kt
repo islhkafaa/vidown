@@ -50,6 +50,7 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
     val concurrentFragments by viewModel.concurrentFragmentsState.collectAsState()
     val bufferSize by viewModel.bufferSizeState.collectAsState()
     val forceIpv4 by viewModel.forceIpv4State.collectAsState()
+    val currentLanguage by viewModel.languageState.collectAsState()
 
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -238,6 +239,17 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                         isSelected = currentTheme == AppTheme.DARK,
                         onClick = { viewModel.setTheme(AppTheme.DARK) }
                     )
+                    SettingsDivider()
+                    ThemeOptionRow(
+                        title = stringResource(R.string.language),
+                        subtitle = if (currentLanguage == "in") stringResource(R.string.indonesian) else stringResource(R.string.english),
+                        icon = Icons.Rounded.Language,
+                        isSelected = false,
+                        onClick = {
+                            val next = if (currentLanguage == "en") "in" else "en"
+                            viewModel.setLanguage(next)
+                        }
+                    )
                 }
             }
 
@@ -416,7 +428,7 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
             }
 
             item {
-                SettingsGroup(title = "Engine Performance") {
+                SettingsGroup(title = stringResource(R.string.engine_performance)) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -424,7 +436,7 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            "Concurrent Fragments",
+                            stringResource(R.string.concurrent_fragments),
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
                         GlassSurface(
@@ -455,15 +467,20 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                             }
                         }
                         Text(
-                            "Increasing fragments speeds up DASH/HLS downloads but uses more CPU and memory.",
+                            stringResource(R.string.fragments_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
                     SettingsDivider()
                     SettingsActionRow(
-                        title = "Buffer Size",
-                        subtitle = bufferSize,
+                        title = stringResource(R.string.buffer_size),
+                        subtitle = when (bufferSize) {
+                            "Standard" -> stringResource(R.string.standard)
+                            "High" -> stringResource(R.string.high)
+                            "Extreme" -> stringResource(R.string.extreme)
+                            else -> bufferSize
+                        },
                         icon = Icons.Rounded.Storage,
                         onClick = {
                             val next = when (bufferSize) {
@@ -484,8 +501,8 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                     )
                     SettingsDivider()
                     SettingsToggleRow(
-                        title = "Force IPv4",
-                        subtitle = "May improve speed on some ISP networks",
+                        title = stringResource(R.string.force_ipv4),
+                        subtitle = stringResource(R.string.ipv4_description),
                         icon = Icons.Rounded.NetworkCheck,
                         checked = forceIpv4,
                         onCheckedChange = { viewModel.setForceIpv4(it) }

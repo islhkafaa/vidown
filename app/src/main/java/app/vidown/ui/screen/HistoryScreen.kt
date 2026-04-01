@@ -222,8 +222,16 @@ fun HistoryScreen(
                 }
 
                 val selectedSource by viewModel.selectedSource.collectAsState()
-                val sources =
-                    listOf("All", "YouTube", "TikTok", "Instagram", "Facebook", "Twitter", "Other")
+                val sourceKeys =
+                    listOf(
+                        "all_sources",
+                        "YouTube",
+                        "TikTok",
+                        "Instagram",
+                        "Facebook",
+                        "Twitter",
+                        "other_source"
+                    )
 
                 Row(
                     modifier = Modifier
@@ -232,11 +240,16 @@ fun HistoryScreen(
                         .padding(horizontal = 20.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    sources.forEach { source ->
+                    sourceKeys.forEach { key ->
+                        val label = when (key) {
+                            "all_sources" -> stringResource(R.string.all_sources)
+                            "other_source" -> stringResource(R.string.other_source)
+                            else -> key
+                        }
                         FilterChip(
-                            selected = selectedSource == source,
-                            onClick = { viewModel.updateSelectedSource(source) },
-                            label = { Text(source) },
+                            selected = selectedSource == key,
+                            onClick = { viewModel.updateSelectedSource(key) },
+                            label = { Text(label) },
                             shape = CircleShape,
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -246,7 +259,7 @@ fun HistoryScreen(
                             ),
                             border = FilterChipDefaults.filterChipBorder(
                                 enabled = true,
-                                selected = selectedSource == source,
+                                selected = selectedSource == key,
                                 borderColor = Color.White.copy(alpha = 0.12f),
                                 selectedBorderColor = Color.Transparent,
                                 borderWidth = 1.dp

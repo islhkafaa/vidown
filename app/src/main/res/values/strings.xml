@@ -72,5 +72,22 @@
     <string name="update_failed">Update failed: %s</string>
     <string name="ok">OK</string>
     <string name="later">Later</string>
+    <string name="engine_performance">Engine Performance</string>
+    <string name="concurrent_fragments">Concurrent Fragments</string>
+    <string name="fragments_description">Increasing fragments speeds up DASH/HLS downloads but uses more CPU and memory.</string>
+    <string name="buffer_size">Buffer Size</string>
+    <string name="force_ipv4">Force IPv4</string>
+    <string name="ipv4_description">May improve speed on some ISP networks</string>
+    <string name="standard">Standard</string>
+    <string name="high">High</string>
+    <string name="extreme">Extreme</string>
+    <string name="all_sources">All</string>
+    <string name="other_source">Other</string>
+    <string name="unknown_error">Unknown error occurred</string>
+    <string name="clear">Clear</string>
+    <string name="fetch">Fetch</string>
+    <string name="language">Language</string>
+    <string name="english">English</string>
+    <string name="indonesian">Indonesian</string>
 </resources>
 

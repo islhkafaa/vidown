@@ -72,6 +72,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = false
         )
 
+    val languageState: StateFlow<String> = settingsRepository.languageFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "en"
+        )
+
     private val updateManager = app.vidown.domain.manager.UpdateManager(application)
 
     private val _updateState =
@@ -174,6 +181,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setForceIpv4(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setForceIpv4(enabled)
+        }
+    }
+
+    fun setLanguage(lang: String) {
+        viewModelScope.launch {
+            settingsRepository.setLanguage(lang)
         }
     }
 }

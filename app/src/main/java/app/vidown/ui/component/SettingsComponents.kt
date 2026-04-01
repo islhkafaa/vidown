@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
 fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            text = title.uppercase(),
+            text = title,
             style = MaterialTheme.typography.labelMedium.copy(
                 letterSpacing = 1.2.sp,
                 fontWeight = FontWeight.Bold

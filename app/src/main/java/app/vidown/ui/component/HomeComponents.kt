@@ -115,7 +115,7 @@ fun ErrorContent(message: String) {
 fun VideoDetailsContent(
     videoInfo: VideoInfo,
     onDownload: (Format) -> Unit,
-    onDownloadPlaylist: () -> Unit,
+    onDownloadSelected: (Set<String>) -> Unit,
     onEntryClick: (VideoInfo) -> Unit,
     homeViewModel: HomeViewModel,
     sharedTransitionScope: SharedTransitionScope,
@@ -123,6 +123,7 @@ fun VideoDetailsContent(
 ) {
     var showFormats by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+    val selectedIds by homeViewModel.selectedEntryIds.collectAsState()
 
     if (showFormats) {
         ModalBottomSheet(
@@ -152,7 +153,7 @@ fun VideoDetailsContent(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 120.dp)
     ) {
         item {
@@ -168,32 +169,65 @@ fun VideoDetailsContent(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "Playlist",
-                        style = MaterialTheme.typography.headlineSmall
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                     TextButton(
-                        onClick = onDownloadPlaylist,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
-                        )
+                        onClick = {
+                            if (selectedIds.size == videoInfo.entries.size) {
+                                homeViewModel.clearSelection()
+                            } else {
+                                homeViewModel.selectAll(videoInfo)
+                            }
+                        }
                     ) {
                         Icon(
-                            Icons.AutoMirrored.Rounded.PlaylistAdd,
+                            imageVector = if (selectedIds.size == videoInfo.entries.size) Icons.Rounded.Close else Icons.Rounded.SelectAll,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("Save All", style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            text = if (selectedIds.size == videoInfo.entries.size) "Deselect All" else "Select All",
+                            style = MaterialTheme.typography.labelLarge
+                        )
                     }
                 }
             }
             items(videoInfo.entries) { entry ->
-                PlaylistEntryItem(entry = entry, onClick = { onEntryClick(entry) })
+                PlaylistEntryItem(
+                    entry = entry,
+                    onClick = { onEntryClick(entry) },
+                    selected = selectedIds.contains(entry.id),
+                    onToggle = { homeViewModel.toggleSelection(entry.id) }
+                )
+            }
+            item {
+                AnimatedVisibility(visible = selectedIds.isNotEmpty()) {
+                    Button(
+                        onClick = { onDownloadSelected(selectedIds) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, contentDescription = null)
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            "Download Selected (${selectedIds.size})",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                }
             }
         } else {
             item {
@@ -222,14 +256,23 @@ fun VideoDetailsContent(
 }
 
 @Composable
-fun PlaylistEntryItem(entry: VideoInfo, onClick: () -> Unit) {
+fun PlaylistEntryItem(
+    entry: VideoInfo,
+    selected: Boolean,
+    onToggle: () -> Unit,
+    onClick: () -> Unit
+) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
+        color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+        else MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
         border = BorderStroke(
             1.dp, Brush.linearGradient(
-                colors = listOf(
+                colors = if (selected) listOf(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                ) else listOf(
                     Color.White.copy(alpha = 0.15f),
                     Color.White.copy(alpha = 0.02f)
                 )
@@ -238,6 +281,12 @@ fun PlaylistEntryItem(entry: VideoInfo, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = selected,
+                onCheckedChange = { onToggle() },
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(Modifier.width(12.dp))
             if (!entry.thumbnailUrl.isNullOrBlank()) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)

@@ -431,8 +431,8 @@ fun HomeScreen(
                                 urlInput = ""
                                 homeViewModel.resetState()
                             },
-                            onDownloadPlaylist = {
-                                homeViewModel.downloadPlaylist(state.videoInfo)
+                            onDownloadSelected = { ids ->
+                                homeViewModel.downloadSelected(state.videoInfo)
                                 coroutineScope.launch {
                                     snackbarHostState.showSnackbar(addedPlaylistToDownloads)
                                 }

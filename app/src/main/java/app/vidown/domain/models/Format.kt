@@ -29,6 +29,9 @@ data class Format(
     val displaySize: Long
         get() = filesize ?: filesizeApprox ?: 0L
 
+    val displaySizeFormatted: String
+        get() = if (displaySize > 0) "${displaySize / (1024 * 1024)} MB" else ""
+
     val hasAudio: Boolean
         get() = acodec != null && acodec != "none"
 

@@ -39,6 +39,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private var lastCheckedClip: String? = null
 
+    private val _selectedEntryIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedEntryIds: StateFlow<Set<String>> = _selectedEntryIds.asStateFlow()
+
     fun fetchVideoInfo(url: String) {
         if (url.isBlank()) return
 
@@ -81,6 +84,42 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 request,
                 wifiOnly
             )
+        }
+    }
+
+    fun toggleSelection(id: String) {
+        val current = _selectedEntryIds.value
+        _selectedEntryIds.value = if (current.contains(id)) current - id else current + id
+    }
+
+    fun selectAll(playlist: VideoInfo) {
+        val allIds = playlist.entries?.map { it.id }?.toSet() ?: emptySet()
+        _selectedEntryIds.value = allIds
+    }
+
+    fun clearSelection() {
+        _selectedEntryIds.value = emptySet()
+    }
+
+    fun downloadSelected(playlist: VideoInfo) {
+        viewModelScope.launch {
+            val wifiOnly = settingsRepository.wifiOnlyFlow.first()
+            val entries = playlist.entries?.filter { _selectedEntryIds.value.contains(it.id) }
+                ?: return@launch
+            val context = getApplication<Application>().applicationContext
+            entries.forEach { entry ->
+                val request =
+                    DownloadRequest(
+                        id = UUID.randomUUID(),
+                        url = entry.displayUrl,
+                        title = entry.title,
+                        thumbnailUrl = entry.thumbnailUrl,
+                        formatId = "best",
+                        totalBytes = 0L
+                    )
+                DownloadQueueRepository.enqueueDownload(context, request, wifiOnly)
+            }
+            clearSelection()
         }
     }
 

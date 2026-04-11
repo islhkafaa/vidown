@@ -134,9 +134,9 @@ fun FormatSelectionItem(format: Format, onClick: () -> Unit) {
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                    if (format.displaySize > 0) {
+                    if (format.displaySizeFormatted.isNotEmpty()) {
                         Text(
-                            text = " • ${format.displaySize / (1024 * 1024)} MB",
+                            text = " • ${format.displaySizeFormatted}",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

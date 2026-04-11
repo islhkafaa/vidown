@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import android.net.Uri
+import java.io.File
+import java.io.FileOutputStream
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsRepository = SettingsRepository(application)
@@ -77,6 +80,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = "en"
+        )
+
+    val cookiesPathState: StateFlow<String?> = settingsRepository.cookiesPathFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
         )
 
     private val updateManager = app.vidown.domain.manager.UpdateManager(application)
@@ -187,6 +197,38 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setLanguage(lang: String) {
         viewModelScope.launch {
             settingsRepository.setLanguage(lang)
+        }
+    }
+
+    fun importCookies(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                val context = getApplication<Application>().applicationContext
+                val cookiesFile = File(context.filesDir, "cookies.txt")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    FileOutputStream(cookiesFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                settingsRepository.setCookiesPath(cookiesFile.absolutePath)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun clearCookies() {
+        viewModelScope.launch {
+            try {
+                val context = getApplication<Application>().applicationContext
+                val cookiesFile = File(context.filesDir, "cookies.txt")
+                if (cookiesFile.exists()) {
+                    cookiesFile.delete()
+                }
+                settingsRepository.setCookiesPath(null)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }

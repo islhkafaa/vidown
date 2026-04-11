@@ -51,6 +51,7 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
     val bufferSize by viewModel.bufferSizeState.collectAsState()
     val forceIpv4 by viewModel.forceIpv4State.collectAsState()
     val currentLanguage by viewModel.languageState.collectAsState()
+    val cookiesPath by viewModel.cookiesPathState.collectAsState()
 
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -61,6 +62,13 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                             android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 contentResolver.takePersistableUriPermission(uri, takeFlags)
                 viewModel.setDownloadUri(uri.toString())
+            }
+        }
+
+    val cookiePickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            if (uri != null) {
+                viewModel.importCookies(uri)
             }
         }
 
@@ -242,7 +250,9 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                     SettingsDivider()
                     ThemeOptionRow(
                         title = stringResource(R.string.language),
-                        subtitle = if (currentLanguage == "in") stringResource(R.string.indonesian) else stringResource(R.string.english),
+                        subtitle = if (currentLanguage == "in") stringResource(R.string.indonesian) else stringResource(
+                            R.string.english
+                        ),
                         icon = Icons.Rounded.Language,
                         isSelected = false,
                         onClick = {
@@ -507,6 +517,39 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                         checked = forceIpv4,
                         onCheckedChange = { viewModel.setForceIpv4(it) }
                     )
+                }
+            }
+
+            item {
+                SettingsGroup(title = stringResource(R.string.account_privacy)) {
+                    SettingsActionRow(
+                        title = stringResource(R.string.cookies_title),
+                        subtitle = if (cookiesPath == null) stringResource(R.string.cookies_subtitle_none) else stringResource(
+                            R.string.cookies_subtitle_imported
+                        ),
+                        icon = Icons.Rounded.VpnKey,
+                        onClick = { cookiePickerLauncher.launch("*/*") },
+                        trailing = {
+                            if (cookiesPath != null) {
+                                IconButton(onClick = { viewModel.clearCookies() }) {
+                                    Icon(
+                                        Icons.Rounded.DeleteSweep,
+                                        null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            } else {
+                                Icon(
+                                    Icons.Rounded.FileUpload,
+                                    null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    )
+                    SettingsDivider()
                 }
             }
         }

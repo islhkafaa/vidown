@@ -182,8 +182,10 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
                             addOption("--embed-thumbnail")
                         }
 
-                        val concurrentFragments = settingsRepository.concurrentFragmentsFlow.firstOrNull() ?: 4
-                        val bufferSizeLabel = settingsRepository.bufferSizeFlow.firstOrNull() ?: "Standard"
+                        val concurrentFragments =
+                            settingsRepository.concurrentFragmentsFlow.firstOrNull() ?: 4
+                        val bufferSizeLabel =
+                            settingsRepository.bufferSizeFlow.firstOrNull() ?: "Standard"
                         val forceIpv4 = settingsRepository.forceIpv4Flow.firstOrNull() ?: false
 
                         addOption("--concurrent-fragments", concurrentFragments)
@@ -198,6 +200,11 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
                         if (forceIpv4) {
                             addOption("--force-ipv4")
+                        }
+
+                        val cookiesPath = settingsRepository.cookiesPathFlow.firstOrNull()
+                        if (cookiesPath != null) {
+                            addOption("--cookies", cookiesPath)
                         }
 
                         addOption("--hls-use-mpegts")

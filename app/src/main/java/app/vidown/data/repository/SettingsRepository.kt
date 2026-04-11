@@ -30,6 +30,7 @@ class SettingsRepository(private val context: Context) {
         val BUFFER_SIZE_KEY = stringPreferencesKey("buffer_size")
         val FORCE_IPV4_KEY = androidx.datastore.preferences.core.booleanPreferencesKey("force_ipv4")
         val LANGUAGE_KEY = stringPreferencesKey("app_language")
+        val COOKIES_PATH_KEY = stringPreferencesKey("cookies_path")
     }
 
     val themeFlow: Flow<AppTheme> = context.dataStore.data
@@ -81,6 +82,11 @@ class SettingsRepository(private val context: Context) {
     val languageFlow: Flow<String> = context.dataStore.data
         .map { preferences ->
             preferences[LANGUAGE_KEY] ?: "en"
+        }
+
+    val cookiesPathFlow: Flow<String?> = context.dataStore.data
+        .map { preferences ->
+            preferences[COOKIES_PATH_KEY]
         }
 
     suspend fun setTheme(theme: AppTheme) {
@@ -138,6 +144,16 @@ class SettingsRepository(private val context: Context) {
     suspend fun setLanguage(lang: String) {
         context.dataStore.edit { preferences ->
             preferences[LANGUAGE_KEY] = lang
+        }
+    }
+
+    suspend fun setCookiesPath(path: String?) {
+        context.dataStore.edit { preferences ->
+            if (path == null) {
+                preferences.remove(COOKIES_PATH_KEY)
+            } else {
+                preferences[COOKIES_PATH_KEY] = path
+            }
         }
     }
 }

@@ -22,7 +22,7 @@
     <string name="paste">Paste</string>
     <string name="dismiss">Dismiss</string>
     <string name="app_title">Vidown</string>
-    <string name="search_placeholder">Paste a video URL…</string>
+    <string name="search_placeholder">Search or paste URL…</string>
     <string name="added_to_downloads">Added to downloads</string>
     <string name="added_playlist_to_downloads">Added playlist to downloads</string>
     <string name="settings">Settings</string>
@@ -89,5 +89,11 @@
     <string name="language">Language</string>
     <string name="english">English</string>
     <string name="indonesian">Indonesian</string>
+    <string name="account_privacy">Account &amp; Privacy</string>
+    <string name="cookies_title">Cookies (cookies.txt)</string>
+    <string name="cookies_subtitle_none">No cookies imported</string>
+    <string name="cookies_subtitle_imported">Cookies successfully imported</string>
+    <string name="import_cookies">Import cookies.txt</string>
+    <string name="clear_cookies">Clear Cookies</string>
 </resources>
 

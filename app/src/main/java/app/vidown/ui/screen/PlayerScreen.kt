@@ -40,6 +40,7 @@ import kotlinx.coroutines.delay
 import java.net.URLDecoder
 import java.util.Locale
 import androidx.core.net.toUri
+
 @OptIn(UnstableApi::class)
 @Composable
 fun PlayerScreen(
@@ -138,14 +139,16 @@ fun PlayerScreen(
                 }
             },
             update = { it.player = exoPlayer },
-            modifier = Modifier.fillMaxSize().then(
-                with(sharedTransitionScope) {
-                    Modifier.sharedElement(
-                        rememberSharedContentState(key = "video_$encodedUri"),
-                        animatedVisibilityScope = animatedContentScope
-                    )
-                }
-            )
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    with(sharedTransitionScope) {
+                        Modifier.sharedElement(
+                            rememberSharedContentState(key = "video_$encodedUri"),
+                            animatedVisibilityScope = animatedContentScope
+                        )
+                    }
+                )
         )
 
         AnimatedVisibility(
@@ -171,6 +174,7 @@ fun PlayerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.TopCenter)
+                        .windowInsetsPadding(WindowInsets.statusBars)
                         .padding(24.dp),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically
@@ -248,6 +252,7 @@ fun PlayerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
+                        .windowInsetsPadding(WindowInsets.navigationBars)
                         .padding(horizontal = 24.dp)
                         .padding(bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)

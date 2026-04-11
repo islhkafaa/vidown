@@ -11,8 +11,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.flow.first
 
 class YtDlpRepository(private val context: Context) {
+    private val settingsRepository = SettingsRepository(context)
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
@@ -48,13 +50,24 @@ class YtDlpRepository(private val context: Context) {
             try {
                 ensureInitialized()
 
+                val finalUrl = if (url.trim().startsWith("http") || url.trim().startsWith("www.")) {
+                    url
+                } else {
+                    "ytsearch10:${url.trim()}"
+                }
+
                 val request =
-                    YoutubeDLRequest(url).apply {
+                    YoutubeDLRequest(finalUrl).apply {
                         addOption("--dump-single-json")
                         if (!allowPlaylist) {
                             addOption("--no-playlist")
                         } else {
                             addOption("--flat-playlist")
+                        }
+
+                        val cookiesPath = settingsRepository.cookiesPathFlow.first()
+                        if (cookiesPath != null) {
+                            addOption("--cookies", cookiesPath)
                         }
                     }
 

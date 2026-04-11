@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" />
   <img src="https://img.shields.io/badge/kotlin-%237F52FF.svg?style=for-the-badge&logo=kotlin&logoColor=white" />
-  <img src="https://img.shields.io/badge/version-0.6.7-blue.svg?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/version-0.7.0-blue.svg?style=for-the-badge" />
   <br />
   <a href="https://github.com/islhkafaa/vidown/actions/workflows/build.yml">
     <img src="https://github.com/islhkafaa/vidown/actions/workflows/build.yml/badge.svg" alt="Android CI" />
@@ -28,13 +28,15 @@ Vidown supports a wide range of platforms via the `yt-dlp` engine, including:
 
 ## Features
 
+- **Cookie Management**: Handles `cookies.txt` import for age-restricted and private content (v0.7.0).
+- **Search & Discover**: Integrated video searching via `ytsearch` prefix detection (v0.7.0).
+- **Edge-to-Edge**: Full transparency for system bars with inset handling (v0.7.0).
 - **yt-dlp Engine**: High-quality video merging via `youtubedl-android` and `ffmpeg`.
 - **Engine Optimization**: Multi-threaded concurrent fragment fetching and configurable buffer sizes (v0.6.5).
 - **History & Organization**: Platform-based filtering for download history.
 - **Glassmorphism UI**: Premium frosted surfaces and fluid Material 3 Expressive motion.
 - **Background Downloads**: Managed by WorkManager as a Foreground Service.
 - **Auto-Updates**: Background extractor updates and direct GitHub OTA support.
-- **Media Organization**: Platform-based filtering for download history.
 - **Smart Automation**: Wi-Fi only download constraints and background maintenance.
 - **Shared Transitions**: Smooth UI morphing between screens.
 - **Player Gestures**: Vertical swipes for volume and brightness control.
@@ -77,9 +79,9 @@ RELEASE_KEY_ALIAS=your_key_alias
 RELEASE_KEY_PASSWORD=your_key_password
 ```
 
-## APK Downloads
+## Releases
 
-Current stable APKs are available in [GitHub Releases](https://github.com/islhkafaa/vidown/releases).
+Stable binaries are automatically generated for every version tag. You can find the latest builds on the [Releases](https://github.com/islhkafaa/vidown/releases) page.
 
 ## Contributing
 

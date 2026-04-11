@@ -163,9 +163,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun isValidUrl(url: String): Boolean {
-        return Patterns.WEB_URL.matcher(url).matches() &&
-                (url.contains("youtube.com") || url.contains("youtu.be") ||
-                        url.contains("instagram.com") || url.contains("facebook.com") ||
-                        url.contains("tiktok.com") || url.contains("twitter.com") || url.contains("x.com"))
+        if (url.isBlank()) return false
+        val isWebUrl = Patterns.WEB_URL.matcher(url).matches()
+        val isSearch = !url.contains(".") || !isWebUrl
+
+        return isWebUrl || (url.trim().split(" ").size >= 1 && isSearch)
     }
 }

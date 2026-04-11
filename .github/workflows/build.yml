@@ -3,6 +3,7 @@ name: Android CI
 on:
   push:
     branches: [ main ]
+    tags: [ '*' ]
   pull_request:
     branches: [ main ]
 
@@ -58,3 +59,20 @@ jobs:
         with:
           name: app-release
           path: app/build/outputs/apk/release/*.apk
+
+      - name: Extract Changelog
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        run: |
+          VERSION="${{ github.ref_name }}"
+          # Extract the section for the latest version from CHANGELOG.md
+          sed -n "/## \[$VERSION\]/,/## \[/p" CHANGELOG.md | sed '$d' > RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Vidown v${{ github.ref_name }}"
+          files: app/build/outputs/apk/release/*.apk
+          body_path: RELEASE_NOTES.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

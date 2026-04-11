@@ -1,26 +1,25 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-
-## [0.6.7] - 2026-04-01
+## [0.7.0] - 2026-04-11
 
 ### Added
 
-- **Multi-Language Support**:
-  - Added support for **Indonesian** (Bahasa Indonesia).
-  - Added a **Language** setting in the Appearance menu.
-  - Implemented runtime language switching so the UI updates instantly.
-- **Queue Management**:
-  - Added **Drag-to-Reorder** for pending downloads.
-  - Added haptic feedback when reordering items.
-- **UI Consistency**:
-  - Updated **Settings** titles to use proper casing (e.g., "Appearance").
-  - Localized accessibility labels and error messages.
+- **Cookie Management**:
+  - Secure import and storage of `cookies.txt` (Netscape format) in internal app storage.
+  - Automatic injection of `--cookies` flag into `yt-dlp` requests for age-restricted or private content.
+  - New "Account & Privacy" settings section to manage local cookie files.
+- **Search & Discover**:
+  - Direct video search from the home screen using the `ytsearch` engine.
+  - Improved input validation to handle both URLs and search queries seamlessly.
+- **Edge-to-Edge UI**:
+  - Full window insets integration for status and navigation bar transparency.
+  - Added safe drawing paddings to video player controls and screen headers.
 
 ### Changed
 
-- **MainActivity Migration**: Upgraded `MainActivity` to extend `AppCompatActivity` to support modern Android per-app language preferences.
-- **Stable Filtering**: Refactored History filtering logic to use internal keys, ensuring source filters work correctly regardless of the selected language.
+- Updated home screen placeholder to "Search or paste URL…".
+- Refined settings UI to consolidate account-related privacy options.
+- Improved video player gesture areas to avoid system UI collisions.
 
 ## [0.6.5] - 2026-03-24
 
